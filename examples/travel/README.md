@@ -1,6 +1,8 @@
 # A third brand: a travel search, from a screenshot
 
-![the rebuilt page, 1280px wide](preview.png)
+![Before: the same brief, generated with nothing declared](baseline.png)
+
+![After: rebuilt against a palette read off a screenshot](unslop.png)
 
 The palette was not chosen here. It was read off a screenshot of an existing
 travel site, sampled in a headless browser rather than eyeballed:

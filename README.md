@@ -15,6 +15,10 @@ decisions.
 It is a skill for coding agents (Claude Code and any agent that reads
 `SKILL.md`), plus two dependency-free scanners you can run on their own or in CI.
 
+![Before: a travel search generated with nothing declared](examples/travel/baseline.png)
+
+![After: the same page rebuilt by unslop](examples/travel/unslop.png)
+
 ## The one rule
 
 > **A tell is evidence of a default nobody chose. It is not proof that a model
@@ -30,7 +34,7 @@ chance, and automated detectors have real error rates. What gets reported is
 As a skill:
 
 ```bash
-git clone https://github.com/<you>/unslop ~/.claude/skills/unslop
+git clone https://github.com/SalvatoreCampagnese/unslop-skill ~/.claude/skills/unslop
 ```
 
 Then ask your agent to "unslop this page" or "unslop this doc".
