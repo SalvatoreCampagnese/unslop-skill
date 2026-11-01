@@ -15,9 +15,7 @@ decisions.
 It is a skill for coding agents (Claude Code and any agent that reads
 `SKILL.md`), plus two dependency-free scanners you can run on their own or in CI.
 
-![Before: a travel search generated with nothing declared](examples/travel/baseline.png)
-
-![After: the same page rebuilt by unslop](examples/travel/unslop.png)
+![One brief, two directions: the same travel page generated with nothing declared (100/100, ai slop) beside the same page rebuilt against a declared palette (0/100, clean)](examples/travel/before-after.png)
 
 ## The one rule
 
