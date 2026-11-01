@@ -1,0 +1,24 @@
+{
+  "tool": "unslop-ui",
+  "version": "0.1.0",
+  "filesScanned": 1,
+  "score": 0,
+  "verdict": "clean",
+  "distinctSignificant": 0,
+  "clusterMultiplier": 1,
+  "rulesFired": 0,
+  "threshold": 25,
+  "direction": {
+    "ground": {
+      "h": 172,
+      "s": 9,
+      "l": 90
+    },
+    "signal": {
+      "h": 5,
+      "s": 72,
+      "l": 43
+    }
+  },
+  "findings": []
+}

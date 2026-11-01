@@ -1,0 +1,41 @@
+{
+  "name": "unslop",
+  "version": "0.3.0",
+  "description": "Remove AI slop from UI and from prose. Configurable source scanners plus a headless-Chrome render audit, and an agent skill.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "unslop-ui": "scripts/detect-ui.mjs",
+    "unslop-text": "scripts/detect-text.mjs",
+    "unslop-render": "scripts/audit-render.mjs"
+  },
+  "scripts": {
+    "test": "node scripts/detect.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "accessibility",
+    "ai-slop",
+    "design",
+    "frontend",
+    "layout",
+    "linter",
+    "prose",
+    "render-audit",
+    "shadcn",
+    "skill",
+    "tailwind",
+    "ui",
+    "visual-regression",
+    "writing"
+  ],
+  "files": [
+    "scripts/",
+    "references/",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ]
+}

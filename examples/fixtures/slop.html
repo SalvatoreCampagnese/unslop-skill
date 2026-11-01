@@ -1,0 +1,29 @@
+<!-- slop-example: deliberately generic, used by scripts/detect.test.mjs -->
+<!doctype html><html><head><style>
+:root{--background:#ffffff;--primary:oklch(0.55 0.25 282);--muted-foreground:#a1a1aa;--radius:0.5rem}
+body{font-family:Inter,system-ui,sans-serif;background:var(--background)}
+.hero{background:linear-gradient(135deg,#6366f1,#a855f7);text-align:center}
+.grad{background-clip:text;-webkit-text-fill-color:transparent}
+.card{border-radius:16px;box-shadow:0 10px 30px rgba(99,102,241,.35);border-left:4px solid #6366f1}
+.glass{backdrop-filter:blur(12px)}
+.feat{display:grid;grid-template-columns:repeat(3,1fr)}
+.lbl{text-transform:uppercase;letter-spacing:.12em}
+.lbl2{text-transform:uppercase;letter-spacing:.2em}
+@keyframes fadeInUp{from{opacity:0}}
+.b{transition:all .3s cubic-bezier(.68,-0.55,.27,1.55)}
+</style></head><body>
+<div class="hero"><span class="badge rounded-full">&#10024; AI-Powered</span>
+<h1 class="text-center">Elevate your <span class="grad">workflow</span></h1>
+<p>The all-in-one platform for seamless, powerful, robust collaboration.</p>
+<a href="#">Get started &#8594;</a></div>
+<div class="lbl">FEATURES</div>
+<div class="feat">
+<div class="card"><svg></svg><h3>&#128640; Faster</h3><p>Lightning fast.</p></div>
+<div class="card"><svg></svg><h3>&#128274; Secure</h3><p>Cutting-edge security.</p></div>
+<div class="card"><svg></svg><h3>&#9889; Smarter</h3><p>Best-in-class.</p></div>
+</div>
+<p>Trusted by 10,000+ teams &middot; 99.9% uptime &middot; 4.9/5 stars</p>
+<p class="lbl2">01 02 03</p>
+<h2>Frequently asked questions</h2><h2>Ready to get started?</h2>
+<img src="https://i.pravatar.cc/80" alt="">
+</body></html>

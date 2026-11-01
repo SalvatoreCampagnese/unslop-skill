@@ -1,0 +1,43 @@
+# ---- OS / editor noise ----
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+*.log
+
+# ---- the scanner's own runtime state ----
+# written by the skill when it fingerprints a direction; local, never shared
+.unslop/
+
+# ---- video: the promo films are a separate production, not the skill ----
+# HyperFrames projects, their caches and every rendered MP4
+video/
+video2/
+video3/
+**/renders/
+**/.hyperframes/
+**/.media/
+*.mp4
+*.mov
+*.webm
+*.wav
+*.mp3
+
+# ---- private drafts: Italian promo scripts, not part of the skill ----
+tiktok-shorts.md
+
+# ---- scratch ----
+tmp/
+.tmp/
+*.local.*

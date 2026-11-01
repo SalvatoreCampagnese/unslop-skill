@@ -1,0 +1,24 @@
+{
+  // unslop.palette.json — the colours this brand owns, with the job each one does.
+  // Declared colours are decisions, so the hue rules (C1, C2, SD1-SD3) stop firing
+  // on them. Anything that is NOT in here starts being reported as drift (X1).
+  "name": "Acme",
+
+  "colors": {
+    "ground":  "#000000",
+    "surface": "#333333",
+    "ink":     "#ffffff",
+    "muted":   "#a1a1a1",
+    "signal":  "#ff6a00",
+    "lift":    "#ff9f1c"
+  },
+
+  // how far a colour may sit from a declared one and still count as that colour
+  "tolerance": { "hue": 12, "sat": 18, "light": 14 },
+
+  // near-greys are structure, not brand: never reported as drift
+  "neutralsAlwaysAllowed": true,
+
+  // true if decorative one-offs outside the palette are fine
+  "allowOffPaletteDecoration": false
+}

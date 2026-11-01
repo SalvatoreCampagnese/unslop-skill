@@ -1,0 +1,13 @@
+{
+  // A search utility. Square corners, no shadows, no tinted glass: the only
+  // things that separate one area from another are rules and whitespace.
+  "radius":    { "policy": "scale", "scale": [0, 2], "tolerance": 0 },
+  "shadow":    { "policy": "none" },
+  "glass":     { "allow": false },
+  "gradients": { "allow": false },
+  "fonts":     { "display": ["Public Sans"], "body": ["Public Sans"], "mono": ["IBM Plex Mono"] },
+  "motion":    { "requireReducedMotion": true, "allowBounce": false, "allowUniformReveal": false },
+  "icons":     { "allowEmoji": false, "allowSparkles": false },
+  "copy":      { "allowArrowsInCta": false, "allowGenericCta": false },
+  "thresholds": { "maxScore": 10, "min": "P2" }
+}

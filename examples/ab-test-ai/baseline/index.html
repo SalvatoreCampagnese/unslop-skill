@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kestrel — AI products, built and shipped</title>
+<meta name="description" content="Kestrel builds AI products and runs AI development for companies that need working systems, not pilots.">
+<style>
+  :root{
+    --ground:#0d0d10;
+    --surface:#17171c;
+    --ink:#f4f4f5;
+    --muted:#a1a1aa;
+    --signal:#7c5cff;
+
+    --line:rgba(244,244,245,.09);
+    --line-strong:rgba(244,244,245,.16);
+    --surface-2:#1d1d24;
+    --signal-soft:rgba(124,92,255,.14);
+    --signal-edge:rgba(124,92,255,.38);
+
+    --maxw:1180px;
+    --pad:24px;
+    --r-sm:10px;
+    --r:16px;
+    --r-lg:24px;
+
+    --sans:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  html:focus-within{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:17px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  img,svg{display:block;max-width:100%}
+  a{color:inherit;text-decoration:none}
+  h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.025em;line-height:1.1}
+  p{margin:0}
+  ul{margin:0;padding:0;list-style:none}
+
+  ::selection{background:var(--signal);color:#fff}
+  :focus-visible{outline:2px solid var(--signal);outline-offset:3px;border-radius:4px}
+
+  /* ---------- primitives ---------- */
+  .wrap{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad)}
+  .section{padding:112px 0;position:relative}
+  .section + .section{border-top:1px solid var(--line)}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .eyebrow::before{
+    content:"";width:18px;height:1px;background:var(--signal-edge)
+  }
+  .lede{color:var(--muted);font-size:19px;max-width:60ch}
+
+  .head{max-width:720px;margin-bottom:56px}
+  .head h2{font-size:clamp(30px,4.4vw,46px);margin:18px 0 18px}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    padding:13px 22px;border-radius:999px;
+    font-size:15px;font-weight:600;letter-spacing:-.01em;
+    border:1px solid transparent;cursor:pointer;
+    transition:transform .18s ease, background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{
+    background:var(--signal);color:#fff;
+    box-shadow:0 1px 0 rgba(255,255,255,.18) inset, 0 10px 30px -12px rgba(124,92,255,.85);
+  }
+  .btn-primary:hover{background:#8f74ff;box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 16px 40px -14px rgba(124,92,255,.95)}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+  .btn-ghost:hover{border-color:rgba(244,244,245,.34);background:rgba(244,244,245,.04)}
+  .btn-sm{padding:9px 16px;font-size:14px}
+
+  .arrow{width:16px;height:16px;flex:none}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    padding:28px;
+    transition:border-color .2s ease, background-color .2s ease, transform .2s ease;
+  }
+  .card:hover{border-color:var(--line-strong);background:var(--surface-2);transform:translateY(-2px)}
+
+  .grid{display:grid;gap:18px}
+
+  /* ---------- header ---------- */
+  header.site{
+    position:sticky;top:0;z-index:50;
+    background:rgba(13,13,16,.78);
+    backdrop-filter:saturate(160%) blur(14px);
+    -webkit-backdrop-filter:saturate(160%) blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .bar{display:flex;align-items:center;gap:28px;height:66px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.02em;font-size:18px}
+  .mark{
+    width:26px;height:26px;border-radius:8px;flex:none;
+    background:linear-gradient(145deg,var(--signal),#4a2fd0);
+    display:grid;place-items:center;
+    box-shadow:0 6px 18px -8px rgba(124,92,255,.9);
+  }
+  .mark svg{width:14px;height:14px}
+  nav.main{display:flex;gap:26px;margin-left:12px}
+  nav.main a{font-size:15px;color:var(--muted);transition:color .18s ease}
+  nav.main a:hover{color:var(--ink)}
+  .bar .spacer{margin-left:auto}
+  .bar-actions{display:flex;align-items:center;gap:10px}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;overflow:hidden;
+    padding:104px 0 96px;
+    border-bottom:1px solid var(--line);
+  }
+  .hero::before{
+    content:"";position:absolute;inset:-30% -10% auto -10%;height:720px;
+    background:
+      radial-gradient(42% 52% at 22% 34%, rgba(124,92,255,.26), transparent 70%),
+      radial-gradient(38% 46% at 78% 8%, rgba(124,92,255,.12), transparent 72%);
+    filter:blur(10px);pointer-events:none;
+  }
+  .hero::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:
+      linear-gradient(to right, rgba(244,244,245,.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(244,244,245,.045) 1px, transparent 1px);
+    background-size:72px 72px;
+    mask-image:radial-gradient(70% 60% at 50% 20%, #000 20%, transparent 85%);
+    -webkit-mask-image:radial-gradient(70% 60% at 50% 20%, #000 20%, transparent 85%);
+  }
+  .hero .wrap{position:relative;z-index:1}
+  .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:64px;align-items:center}
+  .hero h1{
+    font-size:clamp(40px,6.2vw,68px);
+    letter-spacing:-.04em;line-height:1.02;
+    margin:20px 0 22px;
+  }
+  .hero h1 em{
+    font-style:normal;
+    background:linear-gradient(100deg,#c9bcff 0%,var(--signal) 55%,#6d4bf5 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero .lede{font-size:20px;max-width:52ch}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin:34px 0 0}
+  .hero-note{margin-top:18px;font-size:14px;color:var(--muted)}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:6px 14px 6px 10px;border-radius:999px;
+    background:var(--signal-soft);border:1px solid var(--signal-edge);
+    font-size:13px;font-weight:500;color:#d4c9ff;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--signal);flex:none;box-shadow:0 0 0 4px rgba(124,92,255,.22)}
+
+  /* hero panel */
+  .panel{
+    background:linear-gradient(180deg,var(--surface-2),var(--surface));
+    border:1px solid var(--line-strong);
+    border-radius:var(--r-lg);
+    padding:10px;
+    box-shadow:0 40px 90px -40px rgba(0,0,0,.95), 0 0 0 1px rgba(124,92,255,.07);
+  }
+  .panel-top{display:flex;align-items:center;gap:7px;padding:10px 12px 14px}
+  .panel-top span{width:9px;height:9px;border-radius:50%;background:rgba(244,244,245,.16)}
+  .panel-top span:first-child{background:var(--signal)}
+  .panel-top .label{
+    width:auto;height:auto;border-radius:0;background:none;
+    margin-left:8px;font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;
+  }
+  .panel-body{background:var(--ground);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px}
+  .kpi b{display:block;font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1.2}
+  .kpi small{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .kpi.accent b{color:#c9bcff}
+  .bars{display:flex;align-items:flex-end;gap:7px;height:96px;padding-top:6px}
+  .bars i{
+    flex:1;border-radius:4px 4px 2px 2px;
+    background:linear-gradient(180deg,rgba(124,92,255,.85),rgba(124,92,255,.16));
+  }
+  .bars i:nth-child(1){height:34%}
+  .bars i:nth-child(2){height:52%}
+  .bars i:nth-child(3){height:41%}
+  .bars i:nth-child(4){height:63%}
+  .bars i:nth-child(5){height:78%}
+  .bars i:nth-child(6){height:70%}
+  .bars i:nth-child(7){height:92%}
+  .bars i:nth-child(8){height:100%;background:linear-gradient(180deg,#fff,rgba(124,92,255,.5))}
+  .panel-foot{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--muted);padding:12px 4px 4px}
+
+  /* ---------- logos ---------- */
+  .logos{padding:36px 0;border-bottom:1px solid var(--line);background:rgba(23,23,28,.4)}
+  .logos .wrap{display:flex;align-items:center;gap:40px;flex-wrap:wrap;justify-content:space-between}
+  .logos p{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .logo-row{display:flex;gap:42px;flex-wrap:wrap;align-items:center}
+  .logo-row span{
+    font-size:19px;font-weight:600;letter-spacing:-.02em;
+    color:var(--muted);opacity:.75;transition:opacity .2s ease,color .2s ease;
+  }
+  .logo-row span:hover{opacity:1;color:var(--ink)}
+
+  /* ---------- services ---------- */
+  .svc{grid-template-columns:repeat(3,1fr)}
+  .svc .card{display:flex;flex-direction:column;gap:14px;padding:30px}
+  .ico{
+    width:40px;height:40px;border-radius:11px;flex:none;
+    background:var(--signal-soft);border:1px solid var(--signal-edge);
+    display:grid;place-items:center;color:#c9bcff;
+  }
+  .ico svg{width:19px;height:19px}
+  .svc h3{font-size:19px}
+  .svc p{color:var(--muted);font-size:15.5px}
+  .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:auto;padding-top:8px}
+  .tag{
+    font-size:12px;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:4px 10px;
+    background:rgba(244,244,245,.025);
+  }
+
+  /* ---------- process ---------- */
+  .process{grid-template-columns:repeat(4,1fr);gap:0}
+  .step{padding:30px 26px 30px 0;border-top:1px solid var(--line-strong);position:relative;padding-right:26px}
+  .step::before{
+    content:"";position:absolute;top:-1px;left:0;width:34px;height:2px;background:var(--signal);
+  }
+  .step .num{font-family:var(--mono);font-size:12px;color:var(--signal);letter-spacing:.1em;margin-bottom:14px;display:block}
+  .step h3{font-size:18px;margin-bottom:10px}
+  .step p{color:var(--muted);font-size:15px}
+  .step .when{display:block;margin-top:14px;font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+
+  /* ---------- cases ---------- */
+  .cases{grid-template-columns:repeat(3,1fr)}
+  .case{display:flex;flex-direction:column;overflow:hidden;padding:0}
+  .case .top{
+    padding:26px 26px 22px;
+    border-bottom:1px solid var(--line);
+    background:
+      radial-gradient(90% 120% at 10% 0%, rgba(124,92,255,.16), transparent 68%);
+  }
+  .case .sector{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .case .metric{font-size:44px;font-weight:600;letter-spacing:-.04em;line-height:1.05;margin:14px 0 6px}
+  .case .metric-sub{font-size:14.5px;color:var(--muted)}
+  .case .body{padding:24px 26px 26px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .case h3{font-size:17.5px}
+  .case p{color:var(--muted);font-size:15px}
+  .case .stack{margin-top:auto;padding-top:8px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+  /* ---------- testimonials ---------- */
+  .quotes{grid-template-columns:repeat(3,1fr)}
+  .quote{display:flex;flex-direction:column;gap:20px}
+  .quote blockquote{margin:0;font-size:17px;line-height:1.55;letter-spacing:-.012em}
+  .quote .mk{font-size:34px;line-height:0.6;color:var(--signal);font-family:Georgia,serif;display:block;height:18px}
+  .who{display:flex;align-items:center;gap:12px;margin-top:auto}
+  .av{
+    width:38px;height:38px;border-radius:50%;flex:none;
+    display:grid;place-items:center;font-size:13px;font-weight:600;
+    background:linear-gradient(145deg,rgba(124,92,255,.35),rgba(124,92,255,.12));
+    border:1px solid var(--signal-edge);color:#d4c9ff;
+  }
+  .who b{display:block;font-size:14.5px;font-weight:600}
+  .who small{display:block;font-size:13px;color:var(--muted)}
+
+  /* ---------- pricing ---------- */
+  .plans{grid-template-columns:repeat(3,1fr);align-items:start}
+  .plan{display:flex;flex-direction:column;gap:18px;padding:30px}
+  .plan.featured{
+    background:linear-gradient(180deg,rgba(124,92,255,.11),var(--surface) 42%);
+    border-color:var(--signal-edge);
+    box-shadow:0 30px 70px -40px rgba(124,92,255,.6);
+  }
+  .plan.featured:hover{border-color:rgba(124,92,255,.55)}
+  .plan-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .plan h3{font-size:19px}
+  .badge{
+    font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:#d4c9ff;background:var(--signal-soft);border:1px solid var(--signal-edge);
+    padding:4px 9px;border-radius:999px;
+  }
+  .price{font-size:34px;font-weight:600;letter-spacing:-.035em;line-height:1.1}
+  .price span{font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0}
+  .plan > p{color:var(--muted);font-size:15px}
+  .feat{display:flex;flex-direction:column;gap:11px;padding-top:6px;border-top:1px solid var(--line)}
+  .feat li{display:flex;gap:11px;font-size:15px;color:var(--muted);align-items:flex-start}
+  .feat svg{width:15px;height:15px;flex:none;margin-top:5px;color:var(--signal)}
+  .plan .btn{margin-top:auto;width:100%}
+
+  /* ---------- faq ---------- */
+  .faq-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:64px;align-items:start}
+  .faq-list{border-top:1px solid var(--line)}
+  details{border-bottom:1px solid var(--line)}
+  summary{
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:22px 2px;cursor:pointer;list-style:none;
+    font-size:17px;font-weight:500;letter-spacing:-.015em;
+    transition:color .18s ease;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary:hover{color:#c9bcff}
+  summary .sign{
+    width:22px;height:22px;flex:none;position:relative;
+    border:1px solid var(--line-strong);border-radius:6px;
+    transition:border-color .18s ease, background-color .18s ease;
+  }
+  summary .sign::before,summary .sign::after{
+    content:"";position:absolute;inset:50% 5px auto 5px;height:1.5px;background:var(--muted);transform:translateY(-50%);
+    transition:transform .2s ease, background-color .2s ease;
+  }
+  summary .sign::after{transform:translateY(-50%) rotate(90deg)}
+  details[open] summary{color:var(--ink)}
+  details[open] summary .sign{border-color:var(--signal-edge);background:var(--signal-soft)}
+  details[open] summary .sign::before,details[open] summary .sign::after{background:#c9bcff}
+  details[open] summary .sign::after{transform:translateY(-50%) rotate(0deg)}
+  details .ans{padding:0 48px 24px 2px;color:var(--muted);font-size:15.5px}
+
+  /* ---------- final cta ---------- */
+  .cta{padding:0 0 112px}
+  .cta-box{
+    position:relative;overflow:hidden;
+    border:1px solid var(--signal-edge);
+    border-radius:var(--r-lg);
+    padding:72px 56px;
+    text-align:center;
+    background:
+      radial-gradient(70% 140% at 50% 0%, rgba(124,92,255,.28), transparent 70%),
+      linear-gradient(180deg,var(--surface-2),var(--surface));
+  }
+  .cta-box::after{
+    content:"";position:absolute;inset:auto -20% -60% -20%;height:320px;
+    background:radial-gradient(50% 60% at 50% 50%, rgba(124,92,255,.22), transparent 70%);
+    pointer-events:none;
+  }
+  .cta-box > *{position:relative;z-index:1}
+  .cta-box h2{font-size:clamp(30px,4.6vw,48px);margin:18px auto 18px;max-width:20ch}
+  .cta-box p{color:var(--muted);font-size:19px;max-width:54ch;margin-inline:auto}
+  .cta-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+  .cta-meta{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;margin-top:30px;font-size:13.5px;color:var(--muted)}
+  .cta-meta span{display:inline-flex;align-items:center;gap:8px}
+
+  /* ---------- footer ---------- */
+  footer.site{border-top:1px solid var(--line);padding:64px 0 36px;background:rgba(23,23,28,.4)}
+  .foot-grid{display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:48px}
+  .foot-brand p{color:var(--muted);font-size:15px;margin-top:16px;max-width:34ch}
+  .foot h4{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+  .foot li{margin-bottom:11px}
+  .foot a{font-size:15px;color:var(--ink);opacity:.82;transition:opacity .18s ease,color .18s ease}
+  .foot a:hover{opacity:1;color:#c9bcff}
+  .foot-base{
+    display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
+    margin-top:56px;padding-top:26px;border-top:1px solid var(--line);
+    font-size:13.5px;color:var(--muted);
+  }
+  .foot-base ul{display:flex;gap:22px;flex-wrap:wrap}
+  .foot-base a{font-size:13.5px}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:1040px){
+    .svc,.cases,.quotes,.plans{grid-template-columns:repeat(2,1fr)}
+    .process{grid-template-columns:repeat(2,1fr)}
+    .hero-grid{grid-template-columns:1fr;gap:52px}
+    .faq-grid{grid-template-columns:1fr;gap:40px}
+    .foot-grid{grid-template-columns:1fr 1fr;gap:40px}
+    nav.main{display:none}
+  }
+  @media (max-width:720px){
+    body{font-size:16px}
+    :root{--pad:20px}
+    .section{padding:80px 0}
+    .hero{padding:72px 0 76px}
+    .svc,.cases,.quotes,.plans,.process{grid-template-columns:1fr}
+    .step{padding-right:0}
+    .cta-box{padding:52px 24px}
+    .logos .wrap{gap:22px}
+    .logo-row{gap:26px}
+    .foot-grid{grid-template-columns:1fr;gap:34px}
+    .head{margin-bottom:40px}
+    .hero .lede{font-size:18px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;animation:none !important}
+    html:focus-within{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap bar">
+    <a class="brand" href="#top">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 21 4M21 4l-6 1 2 5z"/></svg>
+      </span>
+      Kestrel
+    </a>
+    <nav class="main" aria-label="Primary">
+      <a href="#services">Services</a>
+      <a href="#process">How we work</a>
+      <a href="#work">Case studies</a>
+      <a href="#engagements">Engagements</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="bar-actions">
+      <a class="btn btn-ghost btn-sm" href="#work">See our work</a>
+      <a class="btn btn-primary btn-sm" href="#contact">Book a call</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="pill"><span class="dot"></span> Taking on 4 new builds for Q1 2027</span>
+        <h1>AI systems that make it <em>past the pilot</em>.</h1>
+        <p class="lede">Kestrel is a product studio for applied AI. We build our own tools, and we embed with your team to ship the models, agents and data pipelines that your business actually runs on.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#contact">Book a 30-min call
+            <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="#services">What we build</a>
+        </div>
+        <p class="hero-note">Fixed-scope discovery in 2 weeks &middot; Senior engineers only &middot; You own the code</p>
+      </div>
+
+      <div class="panel" aria-hidden="true">
+        <div class="panel-top">
+          <span></span><span></span><span></span>
+          <span class="label">kestrel/eval — support-triage-v4</span>
+        </div>
+        <div class="panel-body">
+          <div class="kpis">
+            <div class="kpi accent"><b>94.2%</b><small>Resolution accuracy</small></div>
+            <div class="kpi"><b>280ms</b><small>p95 latency</small></div>
+            <div class="kpi"><b>$0.004</b><small>Cost per ticket</small></div>
+            <div class="kpi"><b>11×</b><small>Throughput vs. baseline</small></div>
+          </div>
+          <div class="bars">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="panel-foot">
+            <span>eval run 08 &middot; 12,400 cases</span>
+            <span>shipped to prod</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGOS -->
+  <div class="logos">
+    <div class="wrap">
+      <p>Trusted by teams at</p>
+      <div class="logo-row">
+        <span>Northwind</span>
+        <span>Veridian</span>
+        <span>Halcyon Bank</span>
+        <span>Orbit Health</span>
+        <span>Castellum</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <section class="section" id="services">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Services</span>
+        <h2>Four ways we plug into your roadmap</h2>
+        <p class="lede">Every engagement ends with something in production: a service, a pipeline, or a product your customers can log into.</p>
+      </div>
+      <div class="grid svc">
+        <article class="card">
+          <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg></span>
+          <h3>AI product development</h3>
+          <p>End-to-end builds: discovery, architecture, model selection, interface and launch. We work as a single accountable team, not a staffing line item.</p>
+          <div class="tags"><span class="tag">Product design</span><span class="tag">Full-stack</span><span class="tag">Launch</span></div>
+        </article>
+
+        <article class="card">
+          <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9"/></svg></span>
+          <h3>Agents &amp; automation</h3>
+          <p>Tool-using agents that do real work inside your stack — with guardrails, human handoff, audit trails and an eval suite that tells you when behaviour drifts.</p>
+          <div class="tags"><span class="tag">Orchestration</span><span class="tag">Tooling</span><span class="tag">Evals</span></div>
+        </article>
+
+        <article class="card">
+          <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg></span>
+          <h3>Data &amp; retrieval platforms</h3>
+          <p>The unglamorous half of AI: ingestion, chunking, permissions, freshness, lineage. We make your proprietary data answerable without leaking it.</p>
+          <div class="tags"><span class="tag">RAG</span><span class="tag">Pipelines</span><span class="tag">Governance</span></div>
+        </article>
+
+        <article class="card">
+          <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 4-6 5 4"/><path d="M3 21h18"/><path d="M3 3v18"/></svg></span>
+          <h3>Model tuning &amp; evaluation</h3>
+          <p>Fine-tuning, distillation and prompt-system design, scored against benchmarks built from your own cases — so quality is a number, not an opinion.</p>
+          <div class="tags"><span class="tag">Fine-tuning</span><span class="tag">Benchmarks</span><span class="tag">Cost</span></div>
+        </article>
+
+        <article class="card">
+          <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <h3>Platform &amp; infrastructure</h3>
+          <p>Inference that stays up and stays affordable: routing, caching, batching, observability and the deployment story your security team will sign off on.</p>
+          <div class="tags"><span class="tag">Inference</span><span class="tag">Observability</span><span class="tag">SOC 2</span></div>
+        </article>
+
+        <article class="card">
+          <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/></svg></span>
+          <h3>Team enablement</h3>
+          <p>We hand over more than a repo. Pairing, internal docs, architecture reviews and a ramp plan so your engineers own the system after we leave.</p>
+          <div class="tags"><span class="tag">Pairing</span><span class="tag">Handover</span><span class="tag">Training</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="section" id="process">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">How we work</span>
+        <h2>A short loop, repeated until it ships</h2>
+        <p class="lede">No six-month discovery decks. We aim to have something running against real data inside the first fortnight.</p>
+      </div>
+      <div class="grid process">
+        <div class="step">
+          <span class="num">01</span>
+          <h3>Frame the problem</h3>
+          <p>Two workshops to find where AI actually pays: the decision being made, the data behind it, and the number that has to move.</p>
+          <span class="when">Week 1</span>
+        </div>
+        <div class="step">
+          <span class="num">02</span>
+          <h3>Prove it on your data</h3>
+          <p>A thin vertical slice with an eval harness. If the quality bar isn't reachable, you find out in week two rather than month six.</p>
+          <span class="when">Weeks 2–3</span>
+        </div>
+        <div class="step">
+          <span class="num">03</span>
+          <h3>Build for production</h3>
+          <p>Hardening, interfaces, permissions, fallbacks and load testing. Weekly demos on your staging environment, not screenshots.</p>
+          <span class="when">Weeks 4–10</span>
+        </div>
+        <div class="step">
+          <span class="num">04</span>
+          <h3>Hand over &amp; improve</h3>
+          <p>Documentation, dashboards and a ramp plan for your team — then an optional retainer to keep tuning as usage grows.</p>
+          <span class="when">Ongoing</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASE STUDIES -->
+  <section class="section" id="work">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Case studies</span>
+        <h2>Work that shipped and stayed shipped</h2>
+        <p class="lede">A sample of recent engagements. Numbers are measured 90 days after launch, against the baseline we agreed up front.</p>
+      </div>
+      <div class="grid cases">
+        <article class="card case">
+          <div class="top">
+            <span class="sector">Financial services</span>
+            <p class="metric">-71%</p>
+            <p class="metric-sub">Time to close a compliance review</p>
+          </div>
+          <div class="body">
+            <h3>Halcyon Bank &mdash; policy copilot</h3>
+            <p>A retrieval system over 40 years of internal policy, with clause-level citations and a strict no-answer mode. Reviewers moved from reading to approving.</p>
+            <p class="stack">Hybrid retrieval &middot; Fine-tuned reranker &middot; On-prem</p>
+          </div>
+        </article>
+
+        <article class="card case">
+          <div class="top">
+            <span class="sector">Healthcare ops</span>
+            <p class="metric">18k</p>
+            <p class="metric-sub">Clinician hours returned per year</p>
+          </div>
+          <div class="body">
+            <h3>Orbit Health &mdash; intake automation</h3>
+            <p>Structured extraction from referral documents of every imaginable format, routed into the EHR with a review queue for anything below confidence.</p>
+            <p class="stack">Document AI &middot; Human-in-the-loop &middot; HIPAA</p>
+          </div>
+        </article>
+
+        <article class="card case">
+          <div class="top">
+            <span class="sector">B2B SaaS</span>
+            <p class="metric">4.2×</p>
+            <p class="metric-sub">Support tickets resolved per agent</p>
+          </div>
+          <div class="body">
+            <h3>Northwind &mdash; triage agent</h3>
+            <p>An agent that reads the ticket, reproduces the bug against a sandbox, and either fixes the account state or escalates with a written diagnosis.</p>
+            <p class="stack">Tool-using agent &middot; Eval suite &middot; Cost routing</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section" id="testimonials">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Testimonials</span>
+        <h2>What clients say once the dust settles</h2>
+      </div>
+      <div class="grid quotes">
+        <article class="card quote">
+          <span class="mk" aria-hidden="true">&ldquo;</span>
+          <blockquote>We'd already burned a year on two AI pilots that demoed beautifully and died. Kestrel's first question was how we'd measure it. Ten weeks later the thing was in production and the number moved.</blockquote>
+          <div class="who">
+            <span class="av" aria-hidden="true">PM</span>
+            <div><b>Priya Mehra</b><small>VP Engineering, Northwind</small></div>
+          </div>
+        </article>
+
+        <article class="card quote">
+          <span class="mk" aria-hidden="true">&ldquo;</span>
+          <blockquote>They handled our risk and compliance teams better than most of our internal projects do. Every model decision came with an audit trail, and the handover docs are still what our engineers read first.</blockquote>
+          <div class="who">
+            <span class="av" aria-hidden="true">DO</span>
+            <div><b>Daniel Okafor</b><small>CTO, Halcyon Bank</small></div>
+          </div>
+        </article>
+
+        <article class="card quote">
+          <span class="mk" aria-hidden="true">&ldquo;</span>
+          <blockquote>The rare consultancy that tells you when AI is the wrong answer. They killed one of our three ideas in week two, which saved us a quarter and bought my total trust in the other two.</blockquote>
+          <div class="who">
+            <span class="av" aria-hidden="true">LS</span>
+            <div><b>Lena Strand</b><small>Chief Product Officer, Orbit Health</small></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENGAGEMENTS -->
+  <section class="section" id="engagements">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Engagement models</span>
+        <h2>Three ways to start</h2>
+        <p class="lede">Fixed scope where it makes sense, monthly where it doesn't. No hourly billing, no change-request theatre.</p>
+      </div>
+      <div class="grid plans">
+        <article class="card plan">
+          <div class="plan-head"><h3>Discovery sprint</h3></div>
+          <p class="price">€18k <span>/ fixed</span></p>
+          <p>Two weeks to find out whether this is worth building, with a working slice and an honest recommendation.</p>
+          <ul class="feat">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Opportunity map and scoring</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Prototype on your own data</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Eval harness you keep</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Build estimate and architecture</li>
+          </ul>
+          <a class="btn btn-ghost" href="#contact">Start a sprint</a>
+        </article>
+
+        <article class="card plan featured">
+          <div class="plan-head"><h3>Product build</h3><span class="badge">Most common</span></div>
+          <p class="price">from €45k <span>/ month</span></p>
+          <p>A dedicated squad — product engineer, ML engineer, designer — shipping to your production environment.</p>
+          <ul class="feat">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Everything in Discovery</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Weekly demos, shared backlog</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Infrastructure and observability</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Security review support</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Full handover and code ownership</li>
+          </ul>
+          <a class="btn btn-primary" href="#contact">Scope a build</a>
+        </article>
+
+        <article class="card plan">
+          <div class="plan-head"><h3>Embedded partner</h3></div>
+          <p class="price">Custom <span>/ retainer</span></p>
+          <p>For teams with their own engineers who need senior AI depth alongside them, quarter after quarter.</p>
+          <ul class="feat">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Named engineers on your standups</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Architecture and code review</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Model and cost tuning</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Hiring and ramp support</li>
+          </ul>
+          <a class="btn btn-ghost" href="#contact">Talk it through</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="wrap faq-grid">
+      <div>
+        <span class="eyebrow">FAQ</span>
+        <h2 style="font-size:clamp(28px,4vw,40px);margin:18px 0 18px">Questions we get on the first call</h2>
+        <p class="lede" style="font-size:17px">If yours isn't here, ask it directly &mdash; we answer scoping questions before any contract exists.</p>
+        <p style="margin-top:24px"><a class="btn btn-ghost btn-sm" href="#contact">Ask us anything</a></p>
+      </div>
+
+      <div class="faq-list">
+        <details open>
+          <summary>How quickly can we start? <span class="sign" aria-hidden="true"></span></summary>
+          <div class="ans">Discovery sprints usually begin within two to three weeks of a signed scope. Full builds depend on squad availability; we keep a public slot count at the top of this page and we will tell you plainly if the next window is a month out.</div>
+        </details>
+        <details>
+          <summary>Who owns the code and the models? <span class="sign" aria-hidden="true"></span></summary>
+          <div class="ans">You do, unconditionally, including fine-tuned weights, prompts, eval datasets and infrastructure definitions. We keep no licence on anything delivered and we never reuse your data to improve work for another client.</div>
+        </details>
+        <details>
+          <summary>Do we have to use a specific model provider? <span class="sign" aria-hidden="true"></span></summary>
+          <div class="ans">No. We are deliberately provider-agnostic and design behind an abstraction so you can move. Where quality allows, we route cheaper traffic to smaller or open-weight models and keep frontier models for the cases that need them.</div>
+        </details>
+        <details>
+          <summary>What about data residency and security? <span class="sign" aria-hidden="true"></span></summary>
+          <div class="ans">We work in your cloud account by default, and have delivered fully on-premise and EU-only deployments. We are happy to go through your vendor security review, sign a DPA, and work under your SSO and access policies rather than ours.</div>
+        </details>
+        <details>
+          <summary>What if the pilot shows it won't work? <span class="sign" aria-hidden="true"></span></summary>
+          <div class="ans">Then the sprint did its job and we say so in writing. Roughly one in five discovery engagements ends with a recommendation not to build, usually with a cheaper non-AI alternative attached. That outcome costs you two weeks instead of two quarters.</div>
+        </details>
+        <details>
+          <summary>How small a team will you work with? <span class="sign" aria-hidden="true"></span></summary>
+          <div class="ans">We take on funded startups as well as enterprises, provided someone on your side can make decisions and give us access to data. Our smallest engagement last year was a four-person company; our largest was a bank with 9,000 staff.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="cta" id="contact">
+    <div class="wrap">
+      <div class="cta-box">
+        <span class="eyebrow">Get started</span>
+        <h2>Bring us the problem, not the spec.</h2>
+        <p>Thirty minutes with two senior engineers. We'll tell you whether it's a build, a buy, or a bad idea &mdash; and you'll leave with a written view either way.</p>
+        <div class="cta-actions">
+          <a class="btn btn-primary" href="mailto:hello@kestrel.ai">Book a 30-min call
+            <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="mailto:hello@kestrel.ai">hello@kestrel.ai</a>
+        </div>
+        <div class="cta-meta">
+          <span><span class="dot"></span> Reply within one business day</span>
+          <span><span class="dot"></span> No sales engineers, no decks</span>
+          <span><span class="dot"></span> NDA on request</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#top">
+          <span class="mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 21 4M21 4l-6 1 2 5z"/></svg>
+          </span>
+          Kestrel
+        </a>
+        <p>An applied AI product studio. We build our own products, and we build with companies that need theirs working in production.</p>
+      </div>
+      <div class="foot">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#services">AI product development</a></li>
+          <li><a href="#services">Agents &amp; automation</a></li>
+          <li><a href="#services">Data &amp; retrieval</a></li>
+          <li><a href="#services">Model evaluation</a></li>
+        </ul>
+      </div>
+      <div class="foot">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#work">Case studies</a></li>
+          <li><a href="#process">How we work</a></li>
+          <li><a href="#engagements">Engagements</a></li>
+          <li><a href="#contact">Careers</a></li>
+        </ul>
+      </div>
+      <div class="foot">
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:hello@kestrel.ai">hello@kestrel.ai</a></li>
+          <li><a href="#contact">Book a call</a></li>
+          <li><a href="#contact">Press</a></li>
+          <li><a href="#contact">Milan &middot; Berlin</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>&copy; 2026 Kestrel Technologies. All rights reserved.</p>
+      <ul>
+        <li><a href="#faq">Privacy</a></li>
+        <li><a href="#faq">Terms</a></li>
+        <li><a href="#faq">Security</a></li>
+        <li><a href="#faq">Status</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

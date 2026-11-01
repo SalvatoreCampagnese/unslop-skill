@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verso — Find Your Perfect Trip, Effortlessly</title>
+<meta name="description" content="Verso is the AI-powered travel search platform that helps you discover, compare and book your next adventure seamlessly.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --secondary: #a855f7;
+  --accent: #8b5cf6;
+  --bg: #0f0f17;
+  --surface: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.09);
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --radius: 16px;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.container{ max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+a{ color: inherit; text-decoration: none; }
+
+/* nav */
+.nav{
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(12px);
+  background: rgba(15,15,23,0.72);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner{ display:flex; align-items:center; justify-content:space-between; height: 72px; }
+.logo{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px; letter-spacing:-0.02em; }
+.logo-mark{
+  width:32px; height:32px; border-radius:10px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+}
+.nav-links{ display:flex; gap:32px; font-size:14px; font-weight:500; color: var(--text-muted); }
+.nav-links a:hover{ color: var(--text); }
+.nav-cta{
+  padding: 10px 20px; border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  font-size:14px; font-weight:600;
+  box-shadow: 0 4px 20px -4px rgba(99,102,241,0.6);
+}
+
+/* hero */
+.hero{ position:relative; padding: 110px 0 90px; text-align:center; overflow:hidden; }
+.hero::before{
+  content:''; position:absolute; top:-220px; left:50%; transform:translateX(-50%);
+  width: 900px; height: 600px;
+  background: radial-gradient(circle, rgba(139,92,246,0.35), transparent 65%);
+  filter: blur(60px); pointer-events:none;
+}
+.badge{
+  display:inline-flex; align-items:center; gap:8px;
+  padding: 7px 16px; border-radius: 999px;
+  background: rgba(139,92,246,0.14); border: 1px solid rgba(139,92,246,0.35);
+  font-size:13px; font-weight:500; color:#ddd6fe; margin-bottom: 28px;
+}
+.badge-dot{ width:7px; height:7px; border-radius:999px; background: var(--secondary); }
+.hero h1{
+  font-size: clamp(40px, 6vw, 68px); font-weight: 800; line-height: 1.08;
+  letter-spacing: -0.035em; max-width: 16ch; margin: 0 auto 24px;
+}
+.hero h1 .grad{
+  background: linear-gradient(90deg, #a78bfa, #f0abfc);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero p{ max-width: 620px; margin: 0 auto 40px; font-size: 19px; color: var(--text-muted); }
+
+/* search card */
+.search-card{
+  max-width: 940px; margin: 0 auto;
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  box-shadow: 0 30px 80px -40px rgba(139,92,246,0.7);
+  display:grid; grid-template-columns: repeat(4, 1fr) auto; gap: 8px;
+}
+.sf{ padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.03); text-align:left; }
+.sf span{ display:block; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color: var(--text-muted); margin-bottom:4px; }
+.sf strong{ font-size:15px; font-weight:600; }
+.search-btn{
+  padding: 14px 28px; border:0; border-radius: 12px; cursor:pointer;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color:#fff; font-family:inherit; font-size:15px; font-weight:600;
+  box-shadow: 0 8px 24px -8px rgba(99,102,241,0.8);
+}
+
+/* stats */
+.stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap:24px; padding: 70px 0; border-top:1px solid var(--border); }
+.stat{ text-align:center; }
+.stat .n{
+  font-size: 42px; font-weight: 800; letter-spacing:-0.03em;
+  background: linear-gradient(135deg, #c4b5fd, #f0abfc);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.stat .l{ font-size:14px; color: var(--text-muted); margin-top:6px; }
+
+/* features */
+.section{ padding: 90px 0; }
+.eyebrow{
+  font-size:12px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase;
+  color: var(--accent); text-align:center; margin-bottom:14px;
+}
+.section h2{
+  font-size: clamp(30px, 4vw, 44px); font-weight:800; letter-spacing:-0.03em;
+  text-align:center; max-width: 18ch; margin: 0 auto 16px; line-height:1.14;
+}
+.section .sub{ text-align:center; max-width: 560px; margin: 0 auto 56px; color: var(--text-muted); font-size:17px; }
+.cards{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.card{
+  background: var(--surface); border:1px solid var(--border); border-radius: var(--radius);
+  padding: 30px 26px;
+  box-shadow: 0 10px 30px -18px rgba(139,92,246,0.55);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.card:hover{ transform: translateY(-6px); box-shadow: 0 20px 44px -18px rgba(139,92,246,0.75); }
+.card-icon{
+  width: 48px; height:48px; border-radius: 14px; margin-bottom: 18px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(168,85,247,0.3));
+  border: 1px solid rgba(139,92,246,0.4);
+  display:flex; align-items:center; justify-content:center; font-size: 22px;
+}
+.card h3{ font-size: 19px; font-weight:700; margin-bottom:8px; letter-spacing:-0.01em; }
+.card p{ font-size:15px; color: var(--text-muted); }
+
+/* steps */
+.steps{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+.step{ position:relative; padding-top: 10px; }
+.step .num{
+  font-size: 56px; font-weight:800; line-height:1; letter-spacing:-0.04em;
+  background: linear-gradient(135deg, rgba(167,139,250,0.55), rgba(240,171,252,0.2));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  margin-bottom: 12px;
+}
+.step h3{ font-size:18px; font-weight:700; margin-bottom:6px; }
+.step p{ font-size:15px; color:var(--text-muted); }
+
+/* destinations */
+.dest-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:24px; }
+.dest{
+  border:1px solid var(--border); border-radius: var(--radius); overflow:hidden;
+  background: var(--surface);
+  box-shadow: 0 10px 30px -18px rgba(0,0,0,0.9);
+}
+.dest-img{ height: 170px; background: linear-gradient(135deg, #4c1d95, #7c3aed, #c084fc); }
+.dest-body{ padding: 20px 22px 24px; }
+.dest h3{ font-size:18px; font-weight:700; }
+.dest .meta{ font-size:13px; color: var(--text-muted); margin-top:4px; }
+.dest .price{ margin-top:14px; font-size:22px; font-weight:800; }
+.dest .price small{ font-size:13px; font-weight:500; color: var(--text-muted); }
+
+/* testimonial */
+.quotes{ display:grid; grid-template-columns: repeat(3,1fr); gap:24px; }
+.quote{
+  background: var(--surface); border:1px solid var(--border); border-radius: var(--radius);
+  padding: 26px 24px;
+  box-shadow: 0 10px 30px -18px rgba(139,92,246,0.5);
+}
+.quote p{ font-size:15px; color: var(--text); }
+.quote .who{ margin-top:18px; font-size:13px; color: var(--text-muted); }
+
+/* cta */
+.cta{
+  margin: 40px auto 0; max-width: 1000px; text-align:center;
+  border:1px solid var(--border); border-radius: 24px; padding: 70px 30px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(168,85,247,0.22));
+  box-shadow: 0 40px 100px -50px rgba(139,92,246,0.9);
+}
+.cta h2{ font-size: clamp(28px, 3.6vw, 40px); font-weight:800; letter-spacing:-0.03em; margin-bottom:14px; }
+.cta p{ color: var(--text-muted); max-width: 520px; margin: 0 auto 30px; }
+.btn-primary{
+  display:inline-block; padding: 15px 34px; border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  font-weight:600; font-size:16px;
+  box-shadow: 0 10px 30px -10px rgba(99,102,241,0.9);
+}
+
+/* footer */
+.footer{ border-top:1px solid var(--border); padding: 50px 0 40px; margin-top: 80px; }
+.footer-grid{ display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; }
+.footer h4{ font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color: var(--text-muted); margin-bottom:14px; }
+.footer ul{ list-style:none; display:grid; gap:8px; font-size:14px; color: var(--text-muted); }
+.footer ul a:hover{ color: var(--text); }
+.footer-bottom{ margin-top:40px; padding-top:22px; border-top:1px solid var(--border); font-size:13px; color: var(--text-muted); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+
+@media (max-width: 900px){
+  .search-card{ grid-template-columns: repeat(2, 1fr); }
+  .stats{ grid-template-columns: repeat(2,1fr); }
+  .cards, .steps, .dest-grid, .quotes{ grid-template-columns: 1fr; }
+  .footer-grid{ grid-template-columns: 1fr 1fr; }
+  .nav-links{ display:none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <div class="logo"><span class="logo-mark">&#9992;</span> Verso</div>
+    <div class="nav-links">
+      <a href="#">Flights</a><a href="#">Hotels</a><a href="#">Experiences</a><a href="#">Pricing</a>
+    </div>
+    <a class="nav-cta" href="#">Get Started &rarr;</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="badge"><span class="badge-dot"></span> &#10024; AI-powered trip planning is here</div>
+    <h1>Find your <span class="grad">perfect trip</span>, effortlessly</h1>
+    <p>Verso searches thousands of airlines, hotels and experiences in seconds, so you can spend less time planning and more time travelling.</p>
+
+    <div class="search-card">
+      <div class="sf"><span>From</span><strong>Milan (MXP)</strong></div>
+      <div class="sf"><span>To</span><strong>Anywhere</strong></div>
+      <div class="sf"><span>Depart</span><strong>13 Mar</strong></div>
+      <div class="sf"><span>Travellers</span><strong>2 Adults</strong></div>
+      <button class="search-btn">Search &rarr;</button>
+    </div>
+  </div>
+</header>
+
+<section class="container">
+  <div class="stats">
+    <div class="stat"><div class="n">500+</div><div class="l">Airlines connected</div></div>
+    <div class="stat"><div class="n">2M+</div><div class="l">Happy travellers</div></div>
+    <div class="stat"><div class="n">99%</div><div class="l">Customer satisfaction</div></div>
+    <div class="stat"><div class="n">24/7</div><div class="l">Support available</div></div>
+  </div>
+</section>
+
+<section class="section container">
+  <div class="eyebrow">Why Verso</div>
+  <h2>Everything you need, in one place</h2>
+  <p class="sub">We've reimagined travel search from the ground up to give you a seamless, delightful experience every single time.</p>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">&#9992;</div>
+      <h3>Smart Search</h3>
+      <p>Our intelligent engine scans thousands of options instantly to surface the best deals for you.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#9889;</div>
+      <h3>Lightning Fast</h3>
+      <p>Results in under a second. No more waiting around while the page spins and loads.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128274;</div>
+      <h3>Secure Booking</h3>
+      <p>Bank-level encryption keeps your data safe, so you can book with complete peace of mind.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section container">
+  <div class="eyebrow">How it works</div>
+  <h2>Three simple steps</h2>
+  <p class="sub">Getting from idea to itinerary has never been more straightforward.</p>
+  <div class="steps">
+    <div class="step"><div class="num">01</div><h3>Tell us where</h3><p>Enter your destination, or let us suggest one based on your budget.</p></div>
+    <div class="step"><div class="num">02</div><h3>Compare instantly</h3><p>We search every provider and rank the results by value for money.</p></div>
+    <div class="step"><div class="num">03</div><h3>Book with confidence</h3><p>Secure checkout, instant confirmation and free cancellation on most fares.</p></div>
+  </div>
+</section>
+
+<section class="section container">
+  <div class="eyebrow">Trending now</div>
+  <h2>Popular destinations</h2>
+  <p class="sub">Handpicked trips our community is loving this season.</p>
+  <div class="dest-grid">
+    <div class="dest"><div class="dest-img"></div><div class="dest-body"><h3>Lisbon</h3><div class="meta">Portugal &middot; 3h 00m direct</div><div class="price">&euro;89 <small>return</small></div></div></div>
+    <div class="dest"><div class="dest-img"></div><div class="dest-body"><h3>Barcelona</h3><div class="meta">Spain &middot; 1h 45m direct</div><div class="price">&euro;69 <small>return</small></div></div></div>
+    <div class="dest"><div class="dest-img"></div><div class="dest-body"><h3>Copenhagen</h3><div class="meta">Denmark &middot; 2h 15m direct</div><div class="price">&euro;99 <small>return</small></div></div></div>
+  </div>
+</section>
+
+<section class="section container">
+  <div class="eyebrow">Loved by travellers</div>
+  <h2>Don't just take our word for it</h2>
+  <p class="sub">Join millions of people who have made Verso their go-to travel companion.</p>
+  <div class="quotes">
+    <div class="quote"><p>"Verso completely transformed how I plan my trips. It's a total game changer."</p><div class="who">Sarah M. &middot; Product Designer</div></div>
+    <div class="quote"><p>"I saved over 200 euro on my last booking. The interface is beautiful and intuitive."</p><div class="who">James L. &middot; Software Engineer</div></div>
+    <div class="quote"><p>"Finally a travel site that just works. I'll never use anything else again."</p><div class="who">Priya K. &middot; Marketing Lead</div></div>
+  </div>
+</section>
+
+<section class="container">
+  <div class="cta">
+    <h2>Ready to start your next adventure?</h2>
+    <p>Join over 2 million travellers who trust Verso to find them the perfect trip.</p>
+    <a class="btn-primary" href="#">Get Started Free &rarr;</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="logo"><span class="logo-mark">&#9992;</span> Verso</div>
+        <p style="color:var(--text-muted); font-size:14px; margin-top:12px; max-width:280px;">The smarter way to search, compare and book your next trip.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="#">Flights</a></li><li><a href="#">Hotels</a></li><li><a href="#">Experiences</a></li><li><a href="#">Pricing</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Careers</a></li><li><a href="#">Blog</a></li><li><a href="#">Press</a></li></ul></div>
+      <div><h4>Support</h4><ul><li><a href="#">Help Centre</a></li><li><a href="#">Contact</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Verso Inc. All rights reserved.</span>
+      <span>Made with &#10024; in Milan</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  // Shape, motion and copy decisions already taken for this brand.
+  "radius":    { "policy": "scale", "scale": [0, 3, 10], "tolerance": 1 },
+  "shadow":    { "policy": "none" },
+  "glass":     { "allow": false },
+  "gradients": { "allow": false },
+  "motion":    { "requireReducedMotion": true, "allowBounce": false, "allowUniformReveal": false },
+  "icons":     { "allowEmoji": false, "allowSparkles": false },
+  "copy":      { "allowArrowsInCta": false, "allowGenericCta": false },
+  "thresholds": { "maxScore": 10, "min": "P2" }
+}

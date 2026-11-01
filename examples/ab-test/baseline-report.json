@@ -1,0 +1,344 @@
+{
+  "tool": "unslop-ui",
+  "version": "0.1.0",
+  "filesScanned": 1,
+  "score": 100,
+  "verdict": "template",
+  "distinctSignificant": 11,
+  "clusterMultiplier": 1.6,
+  "rulesFired": 14,
+  "threshold": 25,
+  "direction": {
+    "ground": {
+      "h": 45,
+      "s": 40,
+      "l": 98
+    },
+    "signal": {
+      "h": 246,
+      "s": 90,
+      "l": 60
+    }
+  },
+  "findings": [
+    {
+      "id": "C1",
+      "sev": "P0",
+      "det": "code",
+      "title": "Purple/indigo gradient",
+      "why": "The indigo-to-violet gradient is the single loudest unchosen default in AI-built UI.",
+      "fix": "Use a tonal gradient inside one brand hue, or a flat ground. If the brand really is violet, keep it and note why.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 69,
+      "evidence": "#5c4bf7"
+    },
+    {
+      "id": "C1",
+      "sev": "P0",
+      "det": "code",
+      "title": "Purple/indigo gradient",
+      "why": "The indigo-to-violet gradient is the single loudest unchosen default in AI-built UI.",
+      "fix": "Use a tonal gradient inside one brand hue, or a flat ground. If the brand really is violet, keep it and note why.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 92,
+      "evidence": "#6a5bff"
+    },
+    {
+      "id": "C1",
+      "sev": "P0",
+      "det": "code",
+      "title": "Purple/indigo gradient",
+      "why": "The indigo-to-violet gradient is the single loudest unchosen default in AI-built UI.",
+      "fix": "Use a tonal gradient inside one brand hue, or a flat ground. If the brand really is violet, keep it and note why.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 176,
+      "evidence": "#8678ff"
+    },
+    {
+      "id": "C1",
+      "sev": "P0",
+      "det": "code",
+      "title": "Purple/indigo gradient",
+      "why": "The indigo-to-violet gradient is the single loudest unchosen default in AI-built UI.",
+      "fix": "Use a tonal gradient inside one brand hue, or a flat ground. If the brand really is violet, keep it and note why.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 250,
+      "evidence": "#6a5bff"
+    },
+    {
+      "id": "C1",
+      "sev": "P0",
+      "det": "code",
+      "title": "Purple/indigo gradient",
+      "why": "The indigo-to-violet gradient is the single loudest unchosen default in AI-built UI.",
+      "fix": "Use a tonal gradient inside one brand hue, or a flat ground. If the brand really is violet, keep it and note why.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 302,
+      "evidence": "#211f4d"
+    },
+    {
+      "id": "C2",
+      "sev": "P1",
+      "det": "code",
+      "title": "Violet primary action",
+      "why": "Indigo/violet as the primary button colour with no brand reason.",
+      "fix": "Tie the primary action to the brand colour and give it real hover/active states.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 18,
+      "evidence": "--accent: #4f3df5"
+    },
+    {
+      "id": "C4",
+      "sev": "P2",
+      "det": "code",
+      "title": "Coloured glow shadow",
+      "why": "Saturated glow shadows are decoration standing in for hierarchy.",
+      "fix": "Shadow communicates elevation. Use neutral shadows, or none.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 71,
+      "evidence": "0 1px 2px rgba(42,32,160,.3), 0 10px 22px -10px rgba(63,48,2"
+    },
+    {
+      "id": "C4",
+      "sev": "P2",
+      "det": "code",
+      "title": "Coloured glow shadow",
+      "why": "Saturated glow shadows are decoration standing in for hierarchy.",
+      "fix": "Shadow communicates elevation. Use neutral shadows, or none.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 72,
+      "evidence": "0 1px 2px rgba(42,32,160,.32), 0 16px 30px -12px rgba(63,48,"
+    },
+    {
+      "id": "C4",
+      "sev": "P2",
+      "det": "code",
+      "title": "Coloured glow shadow",
+      "why": "Saturated glow shadows are decoration standing in for hierarchy.",
+      "fix": "Shadow communicates elevation. Use neutral shadows, or none.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 94,
+      "evidence": "0 4px 12px -4px rgba(63,48,220,.6)"
+    },
+    {
+      "id": "C4",
+      "sev": "P2",
+      "det": "code",
+      "title": "Coloured glow shadow",
+      "why": "Saturated glow shadows are decoration standing in for hierarchy.",
+      "fix": "Shadow communicates elevation. Use neutral shadows, or none.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 263,
+      "evidence": "0 30px 60px -28px rgba(63,48,220,.4), var(--shadow-sm)"
+    },
+    {
+      "id": "C4",
+      "sev": "P2",
+      "det": "code",
+      "title": "Coloured glow shadow",
+      "why": "Saturated glow shadows are decoration standing in for hierarchy.",
+      "fix": "Shadow communicates elevation. Use neutral shadows, or none.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 267,
+      "evidence": "0 6px 16px -6px rgba(63,48,220,.8)"
+    },
+    {
+      "id": "T3",
+      "sev": "P1",
+      "det": "code",
+      "title": "Tracked all-caps eyebrow label",
+      "why": "A small spaced uppercase label above every heading is template chrome, not information.",
+      "fix": "Keep the label only if it carries information. Otherwise delete it.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 56,
+      "evidence": "uppercase + letter-spacing"
+    },
+    {
+      "id": "T3",
+      "sev": "P1",
+      "det": "code",
+      "title": "Tracked all-caps eyebrow label",
+      "why": "A small spaced uppercase label above every heading is template chrome, not information.",
+      "fix": "Keep the label only if it carries information. Otherwise delete it.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 153,
+      "evidence": "uppercase + letter-spacing"
+    },
+    {
+      "id": "T3",
+      "sev": "P1",
+      "det": "code",
+      "title": "Tracked all-caps eyebrow label",
+      "why": "A small spaced uppercase label above every heading is template chrome, not information.",
+      "fix": "Keep the label only if it carries information. Otherwise delete it.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 191,
+      "evidence": "uppercase + letter-spacing"
+    },
+    {
+      "id": "T3",
+      "sev": "P1",
+      "det": "code",
+      "title": "Tracked all-caps eyebrow label",
+      "why": "A small spaced uppercase label above every heading is template chrome, not information.",
+      "fix": "Keep the label only if it carries information. Otherwise delete it.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 266,
+      "evidence": "uppercase + letter-spacing"
+    },
+    {
+      "id": "T3",
+      "sev": "P1",
+      "det": "code",
+      "title": "Tracked all-caps eyebrow label",
+      "why": "A small spaced uppercase label above every heading is template chrome, not information.",
+      "fix": "Keep the label only if it carries information. Otherwise delete it.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 322,
+      "evidence": "uppercase + letter-spacing"
+    },
+    {
+      "id": "T4",
+      "sev": "P1",
+      "det": "code",
+      "title": "One accented word in the headline",
+      "why": "Colouring or italicising a single word inside the H1 is the most copied headline move of 2026.",
+      "fix": "Carry emphasis through the type system: scale, weight, or line breaks.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 390,
+      "evidence": "<em>Get paid</em>"
+    },
+    {
+      "id": "S1",
+      "sev": "P1",
+      "det": "code",
+      "title": "rounded-2xl + shadow on every surface",
+      "why": "Identical radius and shadow on every element means role is not encoded in form.",
+      "fix": "Vary radius and elevation by role. A card and a button are not the same object.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 181,
+      "evidence": "radius 14px + box-shadow"
+    },
+    {
+      "id": "S1",
+      "sev": "P1",
+      "det": "code",
+      "title": "rounded-2xl + shadow on every surface",
+      "why": "Identical radius and shadow on every element means role is not encoded in form.",
+      "fix": "Vary radius and elevation by role. A card and a button are not the same object.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 284,
+      "evidence": "radius 14px + box-shadow"
+    },
+    {
+      "id": "S4",
+      "sev": "P1",
+      "det": "code",
+      "title": "Glassmorphism by reflex",
+      "why": "backdrop-blur on a card that is not layered over anything is decoration with no referent.",
+      "fix": "Blur only where real content passes underneath, such as a sticky nav.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 83,
+      "evidence": "backdrop-filter: blur()"
+    },
+    {
+      "id": "S4",
+      "sev": "P1",
+      "det": "code",
+      "title": "Glassmorphism by reflex",
+      "why": "backdrop-blur on a card that is not layered over anything is decoration with no referent.",
+      "fix": "Blur only where real content passes underneath, such as a sticky nav.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 85,
+      "evidence": "backdrop-filter: blur()"
+    },
+    {
+      "id": "S4",
+      "sev": "P1",
+      "det": "code",
+      "title": "Glassmorphism by reflex",
+      "why": "backdrop-blur on a card that is not layered over anything is decoration with no referent.",
+      "fix": "Blur only where real content passes underneath, such as a sticky nav.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 226,
+      "evidence": "backdrop-filter: blur()"
+    },
+    {
+      "id": "L2",
+      "sev": "P0",
+      "det": "code",
+      "title": "Three identical icon-topped feature cards",
+      "why": "Icon, three-word title, two lines of body, times three, all equally weighted.",
+      "fix": "Rank them. Alternating rows, one showcase plus a list, or prose.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 118,
+      "evidence": "3-column grid + 37 icons"
+    },
+    {
+      "id": "L5",
+      "sev": "P1",
+      "det": "code",
+      "title": "Cookie-cutter section order",
+      "why": "Hero, logos, features, how-it-works, testimonials, stats, pricing, FAQ, final CTA. Interchangeable with any other page.",
+      "fix": "Order sections by what this audience needs to decide, and cut the ones that carry nothing.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 1,
+      "evidence": "7 stock sections: logo cloud, how it works, testimonials, pricing, faq, features, social p"
+    },
+    {
+      "id": "K3",
+      "sev": "P1",
+      "det": "code",
+      "title": "Missing interaction states",
+      "why": "No :focus-visible anywhere. Keyboard users get nothing, and it signals nobody used the page.",
+      "fix": "Define :hover, :focus-visible, :active and :disabled, with a transition.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 1,
+      "evidence": "interactive elements, no focus style"
+    },
+    {
+      "id": "M2",
+      "sev": "P1",
+      "det": "code",
+      "title": "Animation without prefers-reduced-motion",
+      "why": "Motion with no reduced-motion branch is an accessibility failure, not a taste call.",
+      "fix": "Wrap motion in @media (prefers-reduced-motion: no-preference), or honour the query.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 1,
+      "evidence": "animation present, no reduced-motion handling"
+    },
+    {
+      "id": "P5",
+      "sev": "P2",
+      "det": "code",
+      "title": "Generic CTA labels",
+      "why": "\"Get started\" / \"Learn more\" / \"Click here\" name no action and no destination.",
+      "fix": "Verb plus object, and keep the verbs consistent across the page.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 616,
+      "evidence": "Get started"
+    },
+    {
+      "id": "SD2",
+      "sev": "P1",
+      "det": "code",
+      "title": "Near-black + acid accent",
+      "why": "Near-black ground with one lime or vermilion accent is the other post-purple default.",
+      "fix": "Go dark only if the product earns it, and choose the signal colour for meaning.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 20,
+      "evidence": "#14161c ground + #13a981 accent"
+    },
+    {
+      "id": "SD3",
+      "sev": "P2",
+      "det": "code",
+      "title": "Emerald as the purple-avoiding accent",
+      "why": "Tailwind emerald-500 is what a model reaches for once told not to use purple.",
+      "fix": "Tie the accent to the brand or the subject and give it a job.",
+      "file": "examples/ab-test/baseline/index.html",
+      "line": 20,
+      "evidence": "#13a981"
+    }
+  ]
+}

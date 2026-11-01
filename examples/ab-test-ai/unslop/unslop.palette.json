@@ -1,0 +1,16 @@
+{
+  // Kestrel's brand palette. These are decisions the client already made,
+  // so the hue rules stop judging them. The orange here is the brand.
+  "name": "Kestrel",
+  "colors": {
+    "ground":  "#000000",
+    "surface": "#333333",
+    "ink":     "#ffffff",
+    "muted":   "#a1a1a1",
+    "signal":  "#ff6a00",
+    "lift":    "#ff9f1c"
+  },
+  "tolerance": { "hue": 14, "sat": 20, "light": 16 },
+  "neutralsAlwaysAllowed": true,
+  "allowOffPaletteDecoration": false
+}

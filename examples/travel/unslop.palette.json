@@ -1,0 +1,23 @@
+{
+  // Read off the reference screenshot, not chosen here.
+  //   #ce3131  the search button, sampled twice in solid areas (#ce3131 / #cf3030)
+  //   #ffffff  the page and the search bar are both pure white
+  //   #111111  the darkest pixel in a heading is #010101, so the ink is black
+  //   #d4d0ca  the warm grey at the edge of the search bar: this brand separates
+  //            things with rules, not with tinted panels
+  // One value was NOT copied: the secondary grey measures #acacac, which is
+  // 2.27:1 on white and fails AA. It moved down the same neutral ramp to 5.0:1.
+  "name": "Verso",
+
+  "colors": {
+    "ground":  "#ffffff",
+    "rule":    "#d4d0ca",
+    "ink":     "#111111",
+    "muted":   "#6b6b6b",
+    "signal":  "#ce3131"
+  },
+
+  "tolerance": { "hue": 12, "sat": 18, "light": 14 },
+  "neutralsAlwaysAllowed": true,
+  "allowOffPaletteDecoration": false
+}

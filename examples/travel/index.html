@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verso — fare search that prices the whole journey</title>
+<meta name="description" content="Verso searches flights, rail and coach across Europe and shows the price you will actually pay: bag, seat, transfer and payment fee included, with the rule that produced each number.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<style>
+/* ------------------------------------------------------------------ tokens
+   Five roles, read off the reference and written into unslop.palette.json.
+   #ce3131 measures 5.11:1 on white, so it carries small text and takes white
+   text on top at the same ratio. The greys between rule and ink are structure.
+   Radii are 0 and 2, the declared scale: this is a timetable, not a card deck. */
+:root{
+  --ground:      #ffffff;
+  --ground-2:    #faf9f7;   /* the search field well, one step off the page   */
+  --rule:        #d4d0ca;   /* the warm grey the reference separates with      */
+  --rule-soft:   #e7e4df;   /* row rules inside a table                        */
+  --rule-strong: #8d877e;   /* a rule under pressure: focus, hover             */
+  --ink:         #111111;
+  --ink-2:       #3d3d3d;
+  --muted:       #6b6b6b;   /* 5.0:1 on white; the reference's own grey was 2.27:1 */
+  --signal:      #ce3131;
+  --signal-deep: #a3201f;   /* the same red, pressed                           */
+
+  --sans: "Public Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --gutter: 28px;
+}
+
+*,*::before,*::after{ box-sizing: border-box; }
+
+html{ -webkit-text-size-adjust: 100%; }
+
+body{
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 16.5px/1.6 var(--sans);
+  overflow-wrap: anywhere;        /* an airport code or a long station name never widens the page */
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,h2,h3{ margin: 0; font-weight: 700; letter-spacing: -0.018em; line-height: 1.15; }
+p{ margin: 0; text-wrap: pretty; }
+ul,ol{ margin: 0; padding: 0; list-style: none; }
+
+a{ color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
+a:hover{ border-bottom-color: var(--signal); }
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+summary:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+
+.num{ font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------------- shell */
+.shell{ max-width: 1140px; margin: 0 auto; padding: 0 var(--gutter); }
+
+.band{ padding: 64px 0; border-top: 1px solid var(--rule); }
+
+/* A section label sits in a narrow left rail. Nothing marks it but the rule
+   that opens the band: on this brand the red belongs to the field labels and
+   the search button, which is where the reference puts it. */
+.spine{
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
+  gap: 0 48px;
+  align-items: start;
+}
+.rail{ min-width: 0; }
+.rail h2{ font-size: 18px; line-height: 1.3; }
+.rail-note{ margin-top: 9px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.column{ min-width: 0; }
+
+/* ---------------------------------------------------------------- masthead */
+.masthead{
+  display: grid;
+  grid-template-areas: "mark nav acct";
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 32px;
+  padding: 20px 0 19px;
+  border-bottom: 1px solid var(--rule);
+}
+.wordmark{
+  grid-area: mark; min-width: 0; border-bottom: 0; padding: 4px 0;
+  font: 700 20px/1.1 var(--sans); letter-spacing: -0.03em;
+}
+.wordmark span{ color: var(--signal); }
+.modes{ grid-area: nav; display: flex; flex-wrap: wrap; gap: 2px 22px; min-width: 0; }
+.modes a{
+  display: inline-block; padding: 7px 0; border-bottom: 0;
+  font: 500 14.5px/1.35 var(--sans); color: var(--ink-2);
+}
+.modes a[aria-current]{ color: var(--ink); box-shadow: inset 0 -2px 0 0 var(--signal); }
+.modes a:hover{ color: var(--ink); }
+.acct{ grid-area: acct; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; min-width: 0; }
+.acct a{ border-bottom: 0; font: 500 14.5px/1.35 var(--sans); color: var(--ink-2); padding: 7px 0; }
+.acct a:hover{ color: var(--ink); }
+
+/* --------------------------------------------------------------- the hero
+   On a search product the search is the thing, so it is set at full width
+   rather than shrunk onto a photograph. The sentence above it is a caption. */
+.hero{ padding: 44px 0 0; }
+.hero h1{
+  max-width: 21ch;
+  font-size: clamp(30px, 4.6vw, 48px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.hero .lede{
+  margin-top: 18px;
+  max-width: 62ch;
+  font-size: 17.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* ------------------------------------------------------------- search form */
+.search{
+  margin-top: 34px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--ground);
+}
+.search-modes{
+  display: flex; flex-wrap: wrap; gap: 0;
+  border-bottom: 1px solid var(--rule);
+}
+.search-mode{
+  min-width: 0; padding: 13px 20px; border: 0; border-bottom: 0;
+  background: transparent; cursor: pointer;
+  font: 500 14.5px/1.3 var(--sans); color: var(--muted);
+}
+.search-mode[aria-pressed="true"]{ color: var(--ink); box-shadow: inset 0 -2px 0 0 var(--signal); }
+.search-mode:hover{ color: var(--ink); }
+
+.fields{
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+.field{
+  min-width: 0;
+  display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  padding: 14px 18px;
+  border-left: 1px solid var(--rule-soft);
+}
+.field:first-child{ border-left: 0; }
+.field label{ font: 500 12.5px/1.4 var(--sans); color: var(--signal); }
+.field input,
+.field select{
+  min-width: 0; width: 100%;
+  border: 0; border-radius: 0; background: transparent;
+  padding: 3px 0; min-height: 30px;
+  font: 500 16.5px/1.45 var(--sans); color: var(--ink);
+  appearance: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.field input::placeholder{ color: var(--muted); font-weight: 400; }
+.field .hint{ font: 400 12.5px/1.4 var(--sans); color: var(--muted); }
+
+.search-go{
+  min-width: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px 30px;
+  border: 0; border-radius: 0;
+  background: var(--signal); color: var(--ground);
+  font: 600 16px/1.25 var(--sans); cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+.search-go:hover{ background: var(--signal-deep); }
+
+.search-foot{
+  display: flex; flex-wrap: wrap; gap: 6px 26px;
+  padding: 11px 18px;
+  border-top: 1px solid var(--rule-soft);
+  font: 400 13.5px/1.5 var(--sans); color: var(--muted);
+}
+.search-foot b{ color: var(--ink); font-weight: 500; }
+
+.hero-note{
+  margin-top: 16px;
+  max-width: 76ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* ----------------------------------------------------------- the fare table
+   The object the product exists to produce, shown before it is described.   */
+.result-head{
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--rule);
+}
+.result-head h3{ font-size: 17px; }
+.result-head .meta{ font: 400 13.5px/1.5 var(--mono); color: var(--muted); }
+
+.fares{ width: 100%; border-collapse: collapse; }
+.fares caption{ text-align: left; padding-bottom: 12px; font: 400 14px/1.55 var(--sans); color: var(--muted); }
+.fares th,
+.fares td{
+  min-width: 0;
+  padding: 12px 20px 12px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  text-align: left;
+  vertical-align: top;
+}
+.fares th{
+  font: 500 12.5px/1.4 var(--sans); color: var(--muted);
+  border-bottom-color: var(--rule);
+  white-space: nowrap;
+}
+.fares .r{ text-align: right; padding-right: 20px; }
+.fares th:last-child,
+.fares td:last-child{ padding-right: 0; }
+.fares td.route{ font-weight: 600; }
+.fares td .via{ display: block; margin-top: 3px; font: 400 13px/1.45 var(--sans); color: var(--muted); }
+.fares .adv{ font-family: var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.fares .tot{ font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.fares tr.pick td{ background: var(--ground-2); }
+.fares td.flag{ white-space: normal; font: 400 13px/1.45 var(--sans); color: var(--ink-2); }
+.fares .tag{
+  display: block; width: fit-content; margin-bottom: 5px; padding: 1px 6px;
+  border: 1px solid var(--signal); border-radius: 2px;
+  font: 500 12.5px/1.5 var(--sans); color: var(--signal);
+}
+.table-wrap{ width: 100%; }
+
+.result-note{
+  margin-top: 16px; max-width: 72ch;
+  font-size: 14.5px; line-height: 1.6; color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- the additions list */
+.adds{ border-top: 1px solid var(--rule); }
+.add{
+  display: grid;
+  grid-template-columns: minmax(0, 170px) minmax(0, 1fr) minmax(0, 120px);
+  gap: 4px 36px;
+  align-items: baseline;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.add dt{ min-width: 0; font-weight: 600; font-size: 15.5px; }
+.add dd{ min-width: 0; margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.add .amt{
+  min-width: 0; text-align: right;
+  font-family: var(--mono); font-size: 15px; font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------ source ledger */
+.sources{ border-top: 1px solid var(--rule); }
+.source{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 190px);
+  gap: 4px 36px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.source .what{ min-width: 0; }
+.source .what b{ font-weight: 600; }
+.source .what span{ display: block; margin-top: 3px; font-size: 14.5px; line-height: 1.55; color: var(--muted); }
+.source .freq{
+  min-width: 0; text-align: right;
+  font: 400 13.5px/1.5 var(--mono); color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- coverage */
+.coverage{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 56px;
+  border-top: 1px solid var(--rule);
+}
+.cov{
+  min-width: 0;
+  display: flex; flex-direction: column;
+  padding: 18px 0 20px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.cov .n{ font: 500 clamp(28px, 3.1vw, 36px)/1.05 var(--mono); letter-spacing: -0.02em; }
+.cov .l{ margin-top: 7px; font-size: 15px; line-height: 1.45; font-weight: 600; }
+.cov .d{ margin-top: 5px; flex: 1; font-size: 14px; line-height: 1.55; color: var(--muted); }
+
+/* --------------------------------------------------------------- questions */
+.qa{ border-top: 1px solid var(--rule); }
+.q{ padding: 20px 0; border-bottom: 1px solid var(--rule-soft); }
+.q h3{ font-size: 16.5px; line-height: 1.4; max-width: 56ch; }
+.q p{ margin-top: 8px; max-width: 72ch; font-size: 15.5px; line-height: 1.62; color: var(--ink-2); }
+
+/* -------------------------------------------------------------- close + foot */
+.close{ padding: 70px 0 74px; border-top: 1px solid var(--rule); }
+.close h2{ max-width: 20ch; font-size: clamp(25px, 3.3vw, 36px); line-height: 1.1; letter-spacing: -0.024em; text-wrap: balance; }
+.close p{ margin-top: 18px; max-width: 58ch; font-size: 17px; line-height: 1.6; color: var(--ink-2); }
+.actions{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 26px; margin-top: 28px; }
+.actions > *{ min-width: 0; }
+.btn{
+  display: inline-block; padding: 13px 24px;
+  border: 0; border-radius: 2px;
+  background: var(--signal); color: var(--ground);
+  font: 600 15.5px/1.25 var(--sans); cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+.btn:hover{ background: var(--signal-deep); color: var(--ground); }
+.btn-text{
+  display: inline-block; padding: 13px 1px;
+  font: 500 15.5px/1.25 var(--sans); color: var(--ink);
+  border-bottom: 1px solid var(--signal);
+}
+.btn-text:hover{ color: var(--signal-deep); border-bottom-color: var(--signal-deep); }
+
+.foot{ padding: 34px 0 44px; border-top: 1px solid var(--rule); }
+.foot-grid{
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 26px 40px;
+}
+.foot-col{ min-width: 0; }
+.foot-col h3{ font: 500 12.5px/1.4 var(--sans); color: var(--muted); }
+.foot-col ul{ margin-top: 10px; display: grid; gap: 6px; }
+.foot-col a{ border-bottom: 0; font-size: 14.5px; color: var(--ink-2); display: inline-block; padding: 3px 0; }
+.foot-col a:hover{ color: var(--ink); border-bottom: 1px solid var(--signal); }
+.foot-col address{ font-style: normal; font-size: 14.5px; line-height: 1.6; color: var(--ink-2); }
+.legal{ margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--rule-soft); font-size: 13px; line-height: 1.6; color: var(--muted); max-width: 86ch; }
+
+/* ------------------------------------------------------------- narrow views */
+@media (max-width: 1039px){
+  .fields{ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .field{ border-top: 1px solid var(--rule-soft); }
+  .field:nth-child(-n+3){ border-top: 0; }
+  .field:nth-child(3n+1){ border-left: 0; }
+  .search-go{ grid-column: 1 / -1; border-top: 1px solid var(--rule-soft); padding: 16px 30px; }
+}
+@media (max-width: 899px){
+  :root{ --gutter: 22px; }
+  .spine{ grid-template-columns: minmax(0, 1fr); gap: 18px 0; }
+  .rail{ max-width: 54ch; }
+  .add{ grid-template-columns: minmax(0, 1fr) minmax(0, 110px); gap: 4px 24px; }
+  .add dd{ grid-column: 1 / -1; }
+  .source{ grid-template-columns: minmax(0, 1fr) minmax(0, 150px); }
+  .foot-grid{ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 719px){
+  .masthead{ grid-template-areas: "mark acct" "nav nav"; grid-template-columns: minmax(0, 1fr) auto; }
+  .fields{ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .field{ border-top: 1px solid var(--rule-soft); }
+  .field:nth-child(-n+2){ border-top: 0; }
+  .field:nth-child(odd){ border-left: 0; }
+  .field:nth-child(even){ border-left: 1px solid var(--rule-soft); }
+}
+@media (max-width: 549px){
+  :root{ --gutter: 17px; }
+
+  /* the fare table becomes one block per fare, each cell labelled */
+  .fares, .fares caption, .fares tbody, .fares tr, .fares td{ display: block; width: 100%; }
+  .fares thead{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .fares tr{ padding: 16px 0 14px; border-bottom: 1px solid var(--rule); }
+  .fares tr:first-child{ border-top: 1px solid var(--rule); }
+  .fares td{ padding: 0; border-bottom: 0; }
+  .fares td + td{ margin-top: 8px; }
+  .fares td[data-label]::before{
+    content: attr(data-label);
+    display: block; margin-bottom: 2px;
+    font: 500 12.5px/1.4 var(--sans); color: var(--muted);
+  }
+  .fares .r{ text-align: left; }
+  /* the stacked row already carries the "Our pick" tag, so a red bar beside
+     it says the same thing twice and reads as a card stripe (S3) */
+  .fares tr.pick td{ background: transparent; }
+  .fares tr.pick{
+    background: var(--ground-2);
+    padding-left: 13px; padding-right: 13px;
+    margin-left: -13px; margin-right: -13px;
+  }
+  .fares .money{ display: flex; flex-wrap: wrap; gap: 4px 28px; }
+  .fares .money > span{ min-width: 0; }
+
+  body{ font-size: 16px; }
+  .band{ padding: 46px 0; }
+  .hero{ padding: 30px 0 0; }
+  .fields{ grid-template-columns: minmax(0, 1fr); }
+  .field{ border-left: 0; border-top: 1px solid var(--rule-soft); }
+  .field:first-child{ border-top: 0; }
+  .coverage{ grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .add{ grid-template-columns: minmax(0, 1fr); gap: 4px 0; }
+  .add .amt{ text-align: left; }
+  .source{ grid-template-columns: minmax(0, 1fr); }
+  .source .freq{ text-align: left; }
+  .foot-grid{ grid-template-columns: minmax(0, 1fr); }
+  .close{ padding: 52px 0 56px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ transition-duration: 1ms !important; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="shell">
+    <div class="masthead">
+      <a class="wordmark" href="#top">Verso<span>.</span></a>
+      <nav class="modes" aria-label="Modes of travel">
+        <a href="#search" aria-current="page">Flights</a>
+        <a href="#search">Trains</a>
+        <a href="#search">Coaches</a>
+        <a href="#rules">How we price</a>
+      </nav>
+      <div class="acct">
+        <a href="#questions">Questions</a>
+        <a href="#account">Trips</a>
+        <a href="#account">Sign in</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- hero: the search itself ------------------------------------------- -->
+  <section class="hero" id="search">
+    <div class="shell">
+      <h1>The fare you are shown is not the fare you pay.</h1>
+      <p class="lede">Verso searches 214 airlines and 31 rail and coach operators across Europe, then adds the bag, the seat, the transfer and the card fee before it ranks anything. The number you sort by is the number you will be charged.</p>
+
+      <form class="search" action="#results" method="get">
+        <div class="search-modes">
+          <button class="search-mode" type="button" aria-pressed="true">Return</button>
+          <button class="search-mode" type="button" aria-pressed="false">One way</button>
+          <button class="search-mode" type="button" aria-pressed="false">Multi-city</button>
+        </div>
+
+        <div class="fields">
+          <div class="field">
+            <label for="f-from">Leaving from</label>
+            <input id="f-from" name="from" type="text" value="Milan, all airports" autocomplete="off">
+            <span class="hint">MXP &middot; LIN &middot; BGY</span>
+          </div>
+          <div class="field">
+            <label for="f-to">Going to</label>
+            <input id="f-to" name="to" type="text" placeholder="City, airport or station" autocomplete="off">
+            <span class="hint">Type three letters or a city name</span>
+          </div>
+          <div class="field">
+            <label for="f-out">Leaving</label>
+            <input id="f-out" name="out" type="text" value="Fri 13 Mar" autocomplete="off">
+            <span class="hint">&plusmn;3 days searched</span>
+          </div>
+          <div class="field">
+            <label for="f-back">Coming back</label>
+            <input id="f-back" name="back" type="text" value="Tue 17 Mar" autocomplete="off">
+            <span class="hint">&plusmn;3 days searched</span>
+          </div>
+          <div class="field">
+            <label for="f-who">Travellers and bags</label>
+            <select id="f-who" name="who">
+              <option>2 adults, 1 bag</option>
+              <option>1 adult, cabin only</option>
+              <option>2 adults, cabin only</option>
+              <option>2 adults, 2 bags</option>
+              <option>2 adults, 2 children</option>
+            </select>
+            <span class="hint">Bags are priced, not assumed</span>
+          </div>
+          <button class="search-go" type="submit">Search fares</button>
+        </div>
+
+        <div class="search-foot">
+          <span><b>Prices include</b> taxes, one checked bag per traveller and card fees</span>
+          <span><b>No fare is promoted.</b> Operators cannot pay for position</span>
+        </div>
+      </form>
+
+      <p class="hero-note">Verso takes a flat fee of &euro;4 per booking, shown before you pay and charged whichever operator you choose. We hold no inventory, so there is nothing we would rather sell you.</p>
+    </div>
+  </section>
+
+  <!-- what a search returns ---------------------------------------------- -->
+  <section class="band" id="results">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>What a search returns</h2>
+          <p class="rail-note">A real result set, kept here so you can read it before signing up for anything.</p>
+        </div>
+        <div class="column">
+          <div class="result-head">
+            <h3>Milan to Lisbon, 13&ndash;17 March, two adults</h3>
+            <span class="meta">47 fares found &middot; priced 09:12 CET</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="fares">
+              <caption>Sorted by what you pay, not by what is advertised. The cheapest advertised fare is fourth on this list.</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Route</th>
+                  <th scope="col">Operator</th>
+                  <th scope="col" class="r">Advertised</th>
+                  <th scope="col" class="r">You pay</th>
+                  <th scope="col">What changed it</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="pick">
+                  <td class="route">MXP &rarr; LIS<span class="via">Direct, 2h 55m</span></td>
+                  <td data-label="Operator">TAP Air Portugal</td>
+                  <td class="r adv" data-label="Advertised">&euro;198</td>
+                  <td class="r tot" data-label="You pay">&euro;246</td>
+                  <td class="flag" data-label="What changed it"><span class="tag">Our pick</span>Bag already in the fare. Card fee &euro;6, seats together &euro;42.</td>
+                </tr>
+                <tr>
+                  <td class="route">LIN &rarr; LIS<span class="via">One stop in Madrid, 5h 40m</span></td>
+                  <td data-label="Operator">Iberia</td>
+                  <td class="r adv" data-label="Advertised">&euro;176</td>
+                  <td class="r tot" data-label="You pay">&euro;268</td>
+                  <td class="flag" data-label="What changed it">Two checked bags &euro;84. Protected connection.</td>
+                </tr>
+                <tr>
+                  <td class="route">BGY &rarr; LIS<span class="via">Direct, 3h 05m</span></td>
+                  <td data-label="Operator">Ryanair</td>
+                  <td class="r adv" data-label="Advertised">&euro;89</td>
+                  <td class="r tot" data-label="You pay">&euro;271</td>
+                  <td class="flag" data-label="What changed it">Bags &euro;112, seats &euro;48, coach to Bergamo &euro;22.</td>
+                </tr>
+                <tr>
+                  <td class="route">MXP &rarr; LIS<span class="via">Self-transfer in Porto, 7h 25m</span></td>
+                  <td data-label="Operator">Wizz Air then FlixBus</td>
+                  <td class="r adv" data-label="Advertised">&euro;71</td>
+                  <td class="r tot" data-label="You pay">&euro;289</td>
+                  <td class="flag" data-label="What changed it">You re-check in. A missed leg is yours to rebook, so we price the next fare at &euro;140.</td>
+                </tr>
+                <tr>
+                  <td class="route">MXP &rarr; LIS<span class="via">Direct, 3h 00m</span></td>
+                  <td data-label="Operator">easyJet</td>
+                  <td class="r adv" data-label="Advertised">&euro;154</td>
+                  <td class="r tot" data-label="You pay">&euro;294</td>
+                  <td class="flag" data-label="What changed it">Bags &euro;108, card fee &euro;11, seats apart unless paid.</td>
+                </tr>
+                <tr>
+                  <td class="route">MXP &rarr; LIS<span class="via">One stop in Paris, 6h 10m</span></td>
+                  <td data-label="Operator">Air France</td>
+                  <td class="r adv" data-label="Advertised">&euro;243</td>
+                  <td class="r tot" data-label="You pay">&euro;298</td>
+                  <td class="flag" data-label="What changed it">Bag and seat in the fare. Longest of the six.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="result-note">The cheapest advertised fare on this search costs <span class="num">&euro;218</span> more than it says, and arrives four and a half hours later than the one we recommend. Neither fact is hidden in a footnote on the booking page: both are in the table above, before you click.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- what we add --------------------------------------------------------- -->
+  <section class="band" id="rules">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>What we add to an advertised fare</h2>
+          <p class="rail-note">Five rules, applied to every result. Figures are medians across the last 90 days of European searches.</p>
+        </div>
+        <div class="column">
+          <dl class="adds">
+            <div class="add">
+              <dt>Checked baggage</dt>
+              <dd>Priced per traveller from the operator&rsquo;s own table, at the weight you selected, not the cheapest band they publish.</dd>
+              <span class="amt">&euro;54</span>
+            </div>
+            <div class="add">
+              <dt>Seat selection</dt>
+              <dd>Added only when a party of two or more cannot be seated together without paying. For solo travellers it is left out.</dd>
+              <span class="amt">&euro;21</span>
+            </div>
+            <div class="add">
+              <dt>Self-transfer risk</dt>
+              <dd>Where two tickets are sold as one journey, we add the cost of the next available fare on the second leg, weighted by how often that connection is missed.</dd>
+              <span class="amt">&euro;140</span>
+            </div>
+            <div class="add">
+              <dt>Airport transfer</dt>
+              <dd>The published coach or rail fare to the city the search names, for airports more than 35km out. Bergamo, Beauvais, Weeze and eleven others.</dd>
+              <span class="amt">&euro;22</span>
+            </div>
+            <div class="add">
+              <dt>Payment fee</dt>
+              <dd>What the operator charges for a normal debit or credit card in the country you are booking from.</dd>
+              <span class="amt">&euro;8</span>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- where the numbers come from ----------------------------------------- -->
+  <section class="band" id="sources">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>Where the numbers come from</h2>
+          <p class="rail-note">Four sources, each with a refresh interval you can hold us to.</p>
+        </div>
+        <div class="column">
+          <ul class="sources">
+            <li class="source">
+              <div class="what"><b>Operator fare feeds</b><span>Direct connections to 214 airlines and 31 rail and coach operators. Where an operator refuses a feed we do not list it rather than scrape it.</span></div>
+              <span class="freq">every 4 minutes</span>
+            </li>
+            <li class="source">
+              <div class="what"><b>Published ancillary tables</b><span>Baggage, seat and card fees, read from each operator&rsquo;s own conditions of carriage and re-read when the document version changes.</span></div>
+              <span class="freq">on version change</span>
+            </li>
+            <li class="source">
+              <div class="what"><b>Ground transport timetables</b><span>Coach and rail fares between outlying airports and the city centre, from the transport authority rather than the airport.</span></div>
+              <span class="freq">weekly</span>
+            </li>
+            <li class="source">
+              <div class="what"><b>Our own completed bookings</b><span>What travellers were actually charged, used to check our estimate against reality. In February the estimate was out by more than &euro;10 on 3.4% of bookings.</span></div>
+              <span class="freq">daily</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- coverage ------------------------------------------------------------ -->
+  <section class="band" id="coverage">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>What is covered</h2>
+          <p class="rail-note">And what is not. We would rather you found out here than at the search results.</p>
+        </div>
+        <div class="column">
+          <div class="coverage">
+            <div class="cov">
+              <span class="n">214</span>
+              <span class="l">Airlines</span>
+              <span class="d">Everything flying scheduled services within Europe, plus long-haul carriers out of 41 European airports.</span>
+            </div>
+            <div class="cov">
+              <span class="n">31</span>
+              <span class="l">Rail and coach operators</span>
+              <span class="d">Including the eleven that do not appear on the large metasearch sites because they will not pay for placement.</span>
+            </div>
+            <div class="cov">
+              <span class="n">9</span>
+              <span class="l">Ferry lines</span>
+              <span class="d">Adriatic, Tyrrhenian and the Baltic. Greek island services are seasonal and we only show them from March.</span>
+            </div>
+            <div class="cov">
+              <span class="n">3</span>
+              <span class="l">Carriers we cannot show</span>
+              <span class="d">Two refuse a feed on any terms, one only sells through its own app. Named in the price promise page.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- questions ----------------------------------------------------------- -->
+  <section class="band" id="questions">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>Questions we get before the first booking</h2>
+          <p class="rail-note">Answered the way we would answer them on the phone.</p>
+        </div>
+        <div class="column">
+          <div class="qa">
+            <div class="q">
+              <h3>If you take a flat fee, why would you ever recommend the cheap fare?</h3>
+              <p>We earn the same &euro;4 whichever line you book, so the ranking has nothing to sell. It is also why there is no &ldquo;sponsored&rdquo; row and no deal of the week: we have nothing to put in one.</p>
+            </div>
+            <div class="q">
+              <h3>What happens when your total turns out to be wrong?</h3>
+              <p>If you pay more than the figure we showed, we refund the difference up to &euro;60, and we publish how often that happens. It was 3.4% of bookings in February, and the median gap was &euro;14.</p>
+            </div>
+            <div class="q">
+              <h3>Do you book the ticket, or send me to the operator?</h3>
+              <p>You book with the operator, on their site, with their terms. We pass the search across and take the fee separately. If something goes wrong with the journey, your contract is with the people flying the aircraft.</p>
+            </div>
+            <div class="q">
+              <h3>Why is a self-transfer priced so much higher than the ticket?</h3>
+              <p>Because two tickets sold as one journey are two tickets. Miss the first leg and nobody owes you the second. We add the median cost of the next fare on that leg, weighted by how often that connection is actually missed on that route.</p>
+            </div>
+            <div class="q">
+              <h3>Can I search without an account?</h3>
+              <p>Yes, and that is the normal way to use it. An account exists so you can keep a search running and be told when the total moves by more than &euro;15.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- close --------------------------------------------------------------- -->
+  <section class="close" id="account">
+    <div class="shell">
+      <h2>Run a search and read the right-hand column.</h2>
+      <p>That column is the whole product. If the totals we show you do not change which fare you would have picked, there is no reason to use Verso, and we would rather you worked that out in one search than after an account and a newsletter.</p>
+      <div class="actions">
+        <a class="btn" href="#search">Search Milan to Lisbon</a>
+        <a class="btn-text" href="#rules">Read the pricing rules in full</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="shell">
+    <div class="foot-grid">
+      <div class="foot-col">
+        <h3>Search</h3>
+        <ul>
+          <li><a href="#search">Flights</a></li>
+          <li><a href="#search">Trains and coaches</a></li>
+          <li><a href="#search">Ferries</a></li>
+          <li><a href="#coverage">Coverage and gaps</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h3>How it works</h3>
+        <ul>
+          <li><a href="#rules">Pricing rules</a></li>
+          <li><a href="#sources">Sources and refresh intervals</a></li>
+          <li><a href="#results">A worked example</a></li>
+          <li><a href="#questions">Questions</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h3>Verso</h3>
+        <address>
+          Via Tortona 37, 20144 Milan<br>
+          <a href="mailto:hello@verso.travel">hello@verso.travel</a><br>
+          Answered 08:00 to 19:00 CET
+        </address>
+      </div>
+    </div>
+    <p class="legal">Verso Ricerche S.r.l., Milan, VAT IT 09871 220 968. Verso is a search service and not a travel agent: tickets are sold by the operator under their own conditions of carriage. Fares shown on this page are from a real search on 13 March and will not be current.</p>
+  </div>
+</footer>
+
+</body>
+</html>

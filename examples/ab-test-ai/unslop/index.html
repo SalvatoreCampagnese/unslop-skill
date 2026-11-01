@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kestrel — applied machine learning, Leeds and Amsterdam</title>
+<meta name="description" content="Kestrel takes machine-learning work that already shows promise inside a company and turns it into a service with an evaluation harness, a rollback path and a named engineer on call.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,300..500;1,6..72,300..400&amp;display=swap">
+<style>
+/* ------------------------------------------------------------------ tokens
+   Colours are the six Kestrel roles from unslop.palette.json. The greys
+   between ground and surface are structure, not brand, so they are free.
+   #ff6a00 measures 7.31:1 on the ground: unlike a mid violet it can carry
+   small text as well as rules, marks, figures and the primary action.
+   #ff9f1c (10.21:1) is the stop above it, for links, hover and focus.
+   Radii are only 0, 3 and 10, the declared scale.                        */
+:root{
+  --field:        #000000;   /* ground: the dark of a dashboard watched at night */
+  --panel:        #141414;   /* raised surface: rate card, product notes         */
+  --panel-high:   #1e1e1e;   /* second surface, for the panel inside a panel     */
+  --hairline:     #262626;   /* faint rule                                       */
+  --rule:         #333333;   /* the ruled-paper structure of a report            */
+  --rule-strong:  #4d4d4d;   /* rule under pressure: hover, focus                */
+  --ink:          #ffffff;
+  --ink-2:        #d4d4d4;
+  --muted:        #a1a1a1;
+  --signal:       #ff6a00;   /* the brand at full strength: rules, marks, figures,
+                                display numerals and the ground of the primary action */
+  --signal-lift:  #ff9f1c;   /* one stop up: links, small accent text, hover, focus   */
+
+  --sans: "Archivo", sans-serif;      /* the rate card: structure, labels, figures */
+  --serif: "Newsreader", Georgia, serif; /* the memo: everything read as prose      */
+  --gutter: 30px;
+  --measure: 66ch;
+}
+
+*,*::before,*::after{ box-sizing: border-box; }
+
+html{ color-scheme: dark; -webkit-text-size-adjust: 100%; }
+
+body{
+  margin: 0;
+  background: var(--field);
+  color: var(--ink);
+  font: 400 17px/1.62 var(--serif);
+  overflow-wrap: anywhere;          /* a long figure or address never widens the page */
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,h2,h3,h4{ font-family: var(--sans); font-weight: 600; margin: 0; letter-spacing: -0.012em; }
+p{ margin: 0; text-wrap: pretty; }   /* no one-word last lines in running prose */
+ul{ margin: 0; padding: 0; list-style: none; }
+
+a{ color: var(--signal-lift); text-decoration: none; border-bottom: 1px solid var(--rule-strong); transition: color 160ms ease-out, border-color 160ms ease-out; }
+a:hover{ color: var(--ink); border-bottom-color: var(--signal); }
+a:focus-visible{ outline: 2px solid var(--signal-lift); outline-offset: 3px; border-radius: 3px; color: var(--ink); }
+button:focus-visible{ outline: 2px solid var(--signal-lift); outline-offset: 3px; }
+
+/* ------------------------------------------------------------------ shell
+   One continuous hairline runs down the left of the content column for the
+   whole document. Where a section starts, two pixels of it turn orange.
+   That mark is the page's only decoration.                                */
+.shell{
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  border-left: 1px solid var(--hairline);
+}
+
+.band{ padding: 78px 0; border-top: 1px solid var(--hairline); }
+.band:first-of-type{ border-top: 0; }
+
+.spine{
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 196px) minmax(0, 1fr);
+  gap: 0 52px;
+  align-items: start;
+}
+.spine::before{
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: calc((var(--gutter) + 1px) * -1);
+  width: 2px;
+  min-height: 38px;
+  height: 38px;
+  background: var(--signal);
+}
+
+/* Prose sections keep the narrow rail. Wide objects — the reference column
+   set and the rate card — put the label above and take the full measure,
+   because three quote columns inside a 196px-railed grid read as a gutter. */
+.spine--wide{ grid-template-columns: minmax(0, 1fr); gap: 30px 0; }
+.spine--wide .rail{ display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 4px 52px; align-items: baseline; }
+
+.rail{ min-width: 0; }
+.rail h2{ font-size: 19px; line-height: 1.3; text-wrap: balance; }
+.rail-note{ margin-top: 10px; font-size: 14.5px; line-height: 1.55; color: var(--muted); }
+.spine--wide .rail-note{ margin-top: 0; max-width: 62ch; }
+.column{ min-width: 0; }
+
+/* --------------------------------------------------------------- masthead */
+.masthead{
+  display: grid;
+  grid-template-areas: "mark nav cta";
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 34px;
+  padding: 26px 0 24px;
+}
+.wordmark{
+  grid-area: mark;
+  min-width: 0;
+  font: 700 21px/1.1 var(--sans);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  border-bottom: 0;
+  padding: 4px 0;
+}
+.wordmark:hover{ color: var(--signal-lift); }
+.nav-links{ grid-area: nav; display: flex; flex-wrap: wrap; gap: 2px 26px; min-width: 0; }
+.nav-links a{
+  display: inline-block;
+  padding: 7px 0;
+  font: 500 14.5px/1.35 var(--sans);
+  color: var(--ink-2);
+  border-bottom: 0;
+}
+.nav-links a:hover{ color: var(--ink); }
+.masthead .btn{ grid-area: cta; }
+
+/* --------------------------------------------------------------- controls */
+.btn{
+  display: inline-block;
+  padding: 13px 22px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--signal);
+  color: var(--field);
+  font: 600 15px/1.25 var(--sans);
+  cursor: pointer;
+  transition: background-color 160ms ease-out;
+}
+.btn:hover{ background: var(--signal-lift); color: var(--field); }
+.btn:focus-visible{ outline: 2px solid var(--ink); outline-offset: 3px; }
+
+.btn-text{
+  display: inline-block;
+  padding: 13px 1px;
+  font: 500 15px/1.25 var(--sans);
+  color: var(--ink);
+  border-bottom: 1px solid var(--signal);
+}
+.btn-text:hover{ color: var(--signal-lift); border-bottom-color: var(--signal-lift); }
+
+.actions{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px 28px; margin-top: 34px; }
+.actions > *{ min-width: 0; }
+
+/* ------------------------------------------------------------------- hero */
+.hero{ padding: 54px 0 86px; }
+.hero-grid{
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  gap: 0 64px;
+  align-items: start;
+}
+.hero-grid::before{
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: calc((var(--gutter) + 1px) * -1);
+  width: 2px;
+  height: 56px;
+  background: var(--signal);
+}
+.hero-main{ min-width: 0; }
+.hero h1{
+  font-size: clamp(31px, 5.1vw, 54px);
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  max-width: 20ch;
+  text-wrap: balance;
+}
+.hero .lede{
+  margin-top: 26px;
+  max-width: 54ch;
+  font-size: 18.5px;
+  line-height: 1.58;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.facts{ min-width: 0; margin: 8px 0 0; }
+.fact{
+  display: grid;
+  grid-template-columns: minmax(0, 92px) minmax(0, 1fr);
+  gap: 0 18px;
+  padding: 11px 0;
+  border-top: 1px solid var(--hairline);
+}
+.fact:first-child{ border-top: 0; padding-top: 0; }
+.fact dt{ min-width: 0; font: 500 13.5px/1.6 var(--sans); color: var(--muted); }
+.fact dd{ min-width: 0; margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2); }
+
+/* --------------------------------------------------------------- services */
+.services{ display: grid; gap: 0; }
+.service{ padding: 30px 0; border-top: 1px solid var(--rule); }
+.service:first-child{ border-top: 0; padding-top: 0; }
+.service h3{ font-size: 21px; line-height: 1.26; }
+.service p{ margin-top: 12px; max-width: var(--measure); color: var(--ink-2); }
+.service-foot{
+  margin-top: 16px;
+  font: 500 14px/1.5 var(--sans);
+  color: var(--muted);
+}
+.service--lead h3{ font-size: clamp(24px, 2.9vw, 30px); line-height: 1.16; max-width: 24ch; }
+.service--lead p{ font-size: 18.5px; }
+
+/* --------------------------------------------------------------- products */
+.pair{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.product{
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 26px 26px 24px;
+  background: var(--panel);
+  border-radius: 10px;
+}
+.product h3{ font-size: 19px; line-height: 1.3; }
+.product-what{ flex: 1; margin-top: 12px; font-size: 16px; line-height: 1.58; color: var(--ink-2); }
+.product-use{
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  font: 500 14px/1.5 var(--sans);
+  color: var(--muted);
+}
+.product-use b{ color: var(--signal-lift); font-weight: 600; }
+
+/* ------------------------------------------------------------- case notes */
+.cases{ display: grid; gap: 0; }
+.case{
+  display: grid;
+  grid-template-columns: minmax(0, 286px) minmax(0, 1fr);
+  gap: 0 52px;
+  padding: 34px 0;
+  border-top: 1px solid var(--rule);
+}
+.case:first-child{ border-top: 0; padding-top: 0; }
+.case-id{ min-width: 0; }
+.case-id h3{ font-size: 20px; line-height: 1.28; }
+.case-meta{ margin-top: 8px; font: 400 14px/1.55 var(--sans); color: var(--muted); }
+.case-figure{
+  margin-top: 22px;
+  font: 700 clamp(34px, 4.4vw, 44px)/1.04 var(--sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: var(--signal);
+}
+.case-figure-note{ margin-top: 9px; max-width: 30ch; font-size: 15px; line-height: 1.5; color: var(--muted); }
+.case-body{ min-width: 0; }
+.case-body p{ max-width: var(--measure); color: var(--ink-2); }
+.case-body p + p{ margin-top: 15px; }
+
+/* ----------------------------------------------------------------- stages */
+.stages{ display: grid; gap: 0; }
+.stage{
+  display: grid;
+  grid-template-columns: minmax(0, 148px) minmax(0, 1fr);
+  gap: 0 32px;
+  padding: 24px 0;
+  border-top: 1px solid var(--hairline);
+}
+.stage:first-child{ border-top: 0; padding-top: 0; }
+.stage-when{
+  min-width: 0;
+  font: 600 15px/1.5 var(--sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--signal-lift);
+}
+.stage-what{ min-width: 0; }
+.stage-what h3{ font-size: 17px; line-height: 1.4; }
+.stage-what p{ margin-top: 10px; max-width: var(--measure); color: var(--ink-2); }
+
+/* ------------------------------------------------------------- references */
+.quotes{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 26px; }
+.quote{
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding-top: 18px;
+  border-top: 2px solid var(--rule);
+}
+.q-who{ font: 600 15.5px/1.35 var(--sans); color: var(--ink); }
+.q-role{
+  min-height: 2.9em;                /* two lines, so every quote below starts level */
+  margin-top: 4px;
+  font: 400 14px/1.45 var(--sans);
+  color: var(--muted);
+}
+.quote blockquote{ flex: 1; margin: 6px 0 0; }
+.quote blockquote p{ font-size: 16.5px; line-height: 1.56; color: var(--ink-2); }
+
+/* ------------------------------------------------------------------ rates */
+.rates{ display: grid; gap: 0; background: var(--panel); border-radius: 10px; }
+.rate{
+  display: grid;
+  grid-template-columns: minmax(0, 186px) minmax(0, 1fr) minmax(0, 190px);
+  gap: 0 32px;
+  padding: 26px 30px;
+  border-top: 1px solid var(--rule);
+}
+.rate:first-child{ border-top: 0; }
+.rate-name{ min-width: 0; }
+.rate-name h3{ font-size: 18px; line-height: 1.3; }
+.rate-tag{ margin-top: 7px; font: 500 13.5px/1.5 var(--sans); color: var(--muted); }
+.rate-what{ min-width: 0; }
+.rate-what p{ font-size: 16px; line-height: 1.56; color: var(--ink-2); }
+.rate-cost{ min-width: 0; }
+.rate-num{
+  font: 700 26px/1.15 var(--sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.rate-unit{ margin-top: 7px; font: 400 13.5px/1.5 var(--sans); color: var(--muted); }
+.rates-note{
+  margin-top: 22px;
+  max-width: var(--measure);
+  font-size: 16px;
+  line-height: 1.58;
+  color: var(--muted);
+}
+
+/* -------------------------------------------------------------- questions */
+.qa-grid{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 30px 44px; }
+.qa{ min-width: 0; }
+.qa h3{ font-size: 17px; line-height: 1.38; }
+.qa p{ margin-top: 10px; font-size: 16px; line-height: 1.58; color: var(--ink-2); }
+
+/* ------------------------------------------------------------- final call */
+.call{ padding: 86px 0 94px; border-top: 1px solid var(--hairline); }
+.call-grid{
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  gap: 24px 64px;
+  align-items: start;
+}
+.call-grid::before{
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: calc((var(--gutter) + 1px) * -1);
+  width: 2px;
+  height: 44px;
+  background: var(--signal);
+}
+.call-main{ min-width: 0; }
+.call h2{ font-size: clamp(25px, 3.4vw, 36px); line-height: 1.14; max-width: 26ch; text-wrap: balance; }
+.call-main p{ margin-top: 20px; max-width: 54ch; font-size: 17.5px; color: var(--ink-2); text-wrap: pretty; }
+.contact{ min-width: 0; padding-top: 6px; }
+.contact-row{ padding: 12px 0; border-top: 1px solid var(--hairline); }
+.contact-row:first-child{ border-top: 0; padding-top: 0; }
+.contact-label{ font: 500 13.5px/1.5 var(--sans); color: var(--muted); }
+.contact-row a, .contact-value{
+  display: inline-block;
+  margin-top: 3px;
+  padding: 3px 0;
+  font: 500 16px/1.4 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+.contact-value{ color: var(--ink); }
+
+/* ----------------------------------------------------------------- footer */
+.foot{ padding: 44px 0 56px; background: var(--panel); }
+.foot-grid{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 330px); gap: 30px 64px; }
+.foot-block{ min-width: 0; }
+.foot-name{ font: 600 16px/1.4 var(--sans); }
+.foot-addr{ margin-top: 8px; font-size: 15.5px; line-height: 1.55; color: var(--muted); }
+.foot-head{ font: 500 13.5px/1.5 var(--sans); color: var(--muted); }
+.foot-links{ margin-top: 6px; }
+.foot-links a{ display: inline-block; padding: 7px 0; font: 400 15.5px/1.45 var(--sans); }
+.foot-legal{
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font: 400 14px/1.6 var(--sans);
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------ narrow ends */
+@media (max-width: 1023px){
+  .quotes{ grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .q-role{ min-height: 0; }
+}
+@media (max-width: 959px){
+  :root{ --gutter: 22px; }
+  /* No room for a margin rule at this width, so the section mark lies down
+     above the label instead of hugging the edge of the screen. */
+  .shell{ border-left: 0; }
+  .spine::before, .hero-grid::before, .call-grid::before{
+    top: -24px; left: 0; width: 30px; height: 2px; min-height: 2px;
+  }
+  .spine{ grid-template-columns: minmax(0, 1fr); gap: 20px 0; }
+  .spine--wide .rail{ grid-template-columns: minmax(0, 1fr); gap: 10px 0; }
+  .rail{ max-width: 52ch; }
+  .hero-grid, .call-grid, .foot-grid{ grid-template-columns: minmax(0, 1fr); gap: 36px 0; }
+  .facts{ max-width: 46ch; }
+  .case{ grid-template-columns: minmax(0, 1fr); gap: 18px 0; }
+  .case-figure{ margin-top: 16px; }
+  .case-figure-note{ max-width: 40ch; }
+  .rate{ grid-template-columns: minmax(0, 1fr); gap: 14px 0; }
+  .rate-cost{ padding-top: 4px; }
+  .qa-grid{ grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  .pair{ grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 819px){
+  .masthead{ grid-template-areas: "mark cta" "nav nav"; grid-template-columns: minmax(0, 1fr) auto; }
+}
+@media (max-width: 599px){
+  :root{ --gutter: 17px; }
+  body{ font-size: 16.5px; }
+  .band{ padding: 54px 0; }
+  .hero{ padding: 36px 0 60px; }
+  .hero .lede{ font-size: 17.5px; }
+  .stage{ grid-template-columns: minmax(0, 1fr); gap: 8px 0; }
+  .service--lead p{ font-size: 17.5px; }
+  .rate{ padding: 22px 20px; }
+  .product{ padding: 22px 20px; }
+  .call{ padding: 58px 0 64px; }
+  .foot{ padding: 36px 0 44px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ transition-duration: 1ms !important; }
+}
+/* --------------------------------------------------------- hero: figure
+   The number leads and the sentence follows it. The figure chosen is the
+   one a studio normally hides: how often the answer is no.                */
+.hero--figure{ padding: 46px 0 86px; }
+.fig-grid{
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: 0 64px;
+  align-items: start;
+}
+.fig-grid::before{
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: calc((var(--gutter) + 1px) * -1);
+  width: 2px;
+  height: 56px;
+  background: var(--signal);
+}
+.fig-num{
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(66px, 14.2vw, 176px);
+  line-height: 0.84;
+  letter-spacing: -0.052em;
+  color: var(--signal);
+}
+.fig-cap{
+  margin-top: 20px;
+  max-width: 34ch;
+  font: 400 14.5px/1.55 var(--sans);
+  color: var(--muted);
+}
+.fig-body h1{
+  font-size: clamp(28px, 3.5vw, 40px);
+  line-height: 1.14;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+  text-wrap: balance;
+}
+.fig-body .lede{
+  margin-top: 22px;
+  max-width: 52ch;
+  font-size: 17.5px;
+  line-height: 1.58;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+@media (max-width: 959px){
+  .fig-grid{ grid-template-columns: minmax(0, 1fr); gap: 34px 0; }
+  .fig-grid::before{ top: -24px; left: 0; width: 30px; height: 2px; }
+  .fig-cap{ max-width: 44ch; }
+}
+@media (max-width: 599px){
+  .hero--figure{ padding: 30px 0 56px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="shell">
+    <div class="masthead">
+      <a class="wordmark" href="#top">Kestrel</a>
+      <div class="nav-links">
+        <a href="#services">What we do</a>
+        <a href="#work">Work</a>
+        <a href="#engagement">Engagement</a>
+        <a href="#questions">Questions</a>
+      </div>
+      <a class="btn" href="#call">Book a scoping call</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- hero ------------------------------------------------------------- -->
+  <section class="hero hero--figure">
+    <div class="shell">
+      <div class="fig-grid">
+        <div>
+          <p class="fig-num">1 in 5</p>
+          <p class="fig-cap">scoping weeks end with us telling you not to build it. You pay for the week either way, and you keep the document.</p>
+        </div>
+        <div class="fig-body">
+          <h1>A model that works in a notebook is not a system yet.</h1>
+          <p class="lede">Kestrel builds the part that has to stay up: the evaluation harness that fails the build, the rollback that needs no deploy, the logging an auditor can read, and a runbook short enough to follow at four in the morning. Fourteen of us, in Leeds and Amsterdam.</p>
+          <div class="actions">
+            <a class="btn" href="#call">Book a scoping call</a>
+            <a class="btn-text" href="#engagement">See what an engagement costs</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- services --------------------------------------------------------- -->
+  <section class="band" id="services">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>What we do</h2>
+          <p class="rail-note">Three services, usually bought in this order. The first one pays for the other two.</p>
+        </div>
+        <div class="column">
+          <div class="services">
+
+            <article class="service service--lead">
+              <h3>Taking a prototype into production</h3>
+              <p>You have a notebook that gets the answer right most of the time, or a vendor demo that fell over the week it met real data. We build the service around the model: an evaluation set that fails the build when quality drops, a rollback that does not need a deploy, request and response logging you can hand to an auditor, and a runbook your on-call engineer can follow without ringing us. First release is usually eleven weeks from the end of the scoping week.</p>
+              <p class="service-foot">Bought as a build pod, three months minimum.</p>
+            </article>
+
+            <article class="service">
+              <h3>Evaluation and acceptance testing</h3>
+              <p>Most of the argument about whether a model is good enough is really an argument about the test. We write the test: a labelled set drawn from your own records, graded by the people who do the job today, with a pass mark agreed in writing before anyone sees a score. You keep the set. It becomes the thing your next supplier has to beat.</p>
+              <p class="service-foot">Bought as a scoping week, then four to six weeks of build.</p>
+            </article>
+
+            <article class="service">
+              <h3>Retrieval over documents you already hold</h3>
+              <p>Ingest that respects the permissions on the source system, chunking tuned on your documents rather than on a blog post, answers that cite the page they came from, and a re-index you can run yourself without us. We will also tell you when a plain search index is the better answer, which happens more often than we would like.</p>
+              <p class="service-foot">Bought as a build pod, usually three months.</p>
+            </article>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- own products ----------------------------------------------------- -->
+  <section class="band" id="products">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>Built in-house</h2>
+          <p class="rail-note">Two products we sell, host and support ourselves. The same engineers are on the rota for both.</p>
+        </div>
+        <div class="column">
+          <div class="pair">
+            <article class="product">
+              <h3>Ledger</h3>
+              <p class="product-what">A decision record for automated decisions. Every output is stored with the inputs it saw, the model version, the feature set or prompt, and the name of whoever overrode it. Built for teams who have to explain a decision eighteen months later.</p>
+              <p class="product-use">Nine lending and claims teams run it. Charged per decision, from <b>&pound;0.004</b>.</p>
+            </article>
+            <article class="product">
+              <h3>Sift</h3>
+              <p class="product-what">Document extraction for claims packs, bills of lading and supplier invoices. It reads about 240,000 pages in a normal month across our clients, and sends the three in a hundred it is unsure about to a person, with the reason.</p>
+              <p class="product-use">Hosted in Ireland or on your own cluster. From <b>&pound;1,900 a month</b>.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- work ------------------------------------------------------------- -->
+  <section class="band" id="work">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>Selected work</h2>
+          <p class="rail-note">Three engagements, each with the number the client used to judge it. All three gave us permission to name them.</p>
+        </div>
+        <div class="column">
+          <div class="cases">
+
+            <article class="case">
+              <div class="case-id">
+                <h3>Brigg &amp; Marsden</h3>
+                <p class="case-meta">Specialty insurer, Leeds. Client since 2021.</p>
+                <p class="case-figure">9 hours</p>
+                <p class="case-figure-note">first response on a new claim, down from 3.4 days</p>
+              </div>
+              <div class="case-body">
+                <p>Claims arrived as email with attachments and were triaged by hand, in the order the inbox happened to show them. We built a triage service that reads the pack, assigns a complexity band and routes it, with a confidence floor below which a handler still reads everything. Just over seven claims in ten are now routed before anyone opens them.</p>
+                <p>The evaluation set is 4,100 historic claims graded independently by two senior handlers. Where the two disagreed, a third decided, and those cases are kept as a separate harder set. The build fails if agreement with the handlers drops below the mark they set in the second week.</p>
+              </div>
+            </article>
+
+            <article class="case">
+              <div class="case-id">
+                <h3>Northgate Freight</h3>
+                <p class="case-meta">Groupage and customs brokerage, Rotterdam.</p>
+                <p class="case-figure">&pound;410,000</p>
+                <p class="case-figure-note">annual keying cost removed, audited by their finance team</p>
+              </div>
+              <div class="case-body">
+                <p>Bills of lading and customs paperwork were keyed by six people across two shifts. We extracted the fields that were worth extracting and left alone the ones that were not: four of the eighteen fields on the form still go to a person, because the error cost there is higher than the labour cost.</p>
+                <p>Two reviewers now handle exceptions instead of six keying everything. Their customs correction rate fell by about a factor of five, which mattered more to the board than the saving did.</p>
+              </div>
+            </article>
+
+            <article class="case">
+              <div class="case-id">
+                <h3>Arborfield Mutual</h3>
+                <p class="case-meta">Building society, Reading. Regulated lending.</p>
+                <p class="case-figure">2 days</p>
+                <p class="case-figure-note">median time to an affordability decision, down from eleven</p>
+              </div>
+              <div class="case-body">
+                <p>Affordability packs were checked by hand against a policy document that had been amended nine times. We built the document checks, and then the part that turned out to matter: a record of every automated check with the document it read, the clause it applied and the version of the policy in force that day.</p>
+                <p>Ledger came out of this engagement. Arborfield asked for the audit trail, we built it twice badly, and the third version became a product other lenders now pay for.</p>
+              </div>
+            </article>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- how we work ------------------------------------------------------ -->
+  <section class="band" id="how">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>How we work</h2>
+          <p class="rail-note">The same shape every time. If an engagement has to depart from it, we say so in writing before you sign.</p>
+        </div>
+        <div class="column">
+          <div class="stages">
+
+            <article class="stage">
+              <p class="stage-when">Days 1 to 5</p>
+              <div class="stage-what">
+                <h3>Scoping week</h3>
+                <p>Two engineers with whoever owns the data and whoever owns the budget, in the same room for at least two of the five days. We read the data, run a cheap baseline, and write a short document: what we think is achievable, what the evaluation set should contain, what it will cost, and whether we think you should do it at all. You pay for the week and keep the document whatever it says.</p>
+              </div>
+            </article>
+
+            <article class="stage">
+              <p class="stage-when">Weeks 2 to 4</p>
+              <div class="stage-what">
+                <h3>The test comes before the model</h3>
+                <p>Your people grade the evaluation set. A pass mark is written down and signed off by the person who will be accountable for the decisions the system makes. This is the part clients argue about most, and the part that settles every later argument in one sentence.</p>
+              </div>
+            </article>
+
+            <article class="stage">
+              <p class="stage-when">Weeks 5 to 11</p>
+              <div class="stage-what">
+                <h3>Build, in your repositories</h3>
+                <p>A pod of three works in your version control, your review process and your sprint rhythm. The weekly demo is a run of the harness, not a slide. Your engineers are on the pull requests from the first commit, because a handover to people who have never read the code is not a handover.</p>
+              </div>
+            </article>
+
+            <article class="stage">
+              <p class="stage-when">After handover</p>
+              <div class="stage-what">
+                <h3>Pairing, then out</h3>
+                <p>A week of pairing with the team that will own it, plus the runbook and the harness. Some clients keep us on call for a quarter or two. Most do not need to after that, and we will tell you when a retainer has stopped earning its fee rather than wait for you to notice.</p>
+              </div>
+            </article>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- references ------------------------------------------------------- -->
+  <section class="band" id="references">
+    <div class="shell">
+      <div class="spine spine--wide">
+        <div class="rail">
+          <h2>References</h2>
+          <p class="rail-note">Three clients who agreed to be quoted and to take a call from anyone considering us.</p>
+        </div>
+        <div class="column">
+          <div class="quotes">
+
+            <figure class="quote">
+              <p class="q-who">Ruth Okonkwo</p>
+              <p class="q-role">Claims director, Brigg &amp; Marsden</p>
+              <blockquote><p>They spent the first fortnight telling us our own labels were inconsistent, which was not what we wanted to hear and was correct. The triage model was the second thing they built. The test was the first.</p></blockquote>
+            </figure>
+
+            <figure class="quote">
+              <p class="q-who">Daniel Vasquez</p>
+              <p class="q-role">Chief technology officer, Northgate</p>
+              <blockquote><p>Two firms had quoted us for a pilot. Kestrel asked for the keying costs and the error log, then told us which half of the problem was not worth automating. We paid for the week and cut the scope in half.</p></blockquote>
+            </figure>
+
+            <figure class="quote">
+              <p class="q-who">Priya Raman</p>
+              <p class="q-role">Lending operations, Arborfield</p>
+              <blockquote><p>Our auditors asked how a decision had been reached and we showed them, down to the clause in the policy document. That is the part I would buy again, and it was not the part we originally asked for.</p></blockquote>
+            </figure>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- engagement ------------------------------------------------------- -->
+  <section class="band" id="engagement">
+    <div class="shell">
+      <div class="spine spine--wide">
+        <div class="rail">
+          <h2>Engagement models</h2>
+          <p class="rail-note">Three shapes: a fixed fee, a monthly team, a flat retainer. Rates exclude VAT and travel, and hold for the calendar year.</p>
+        </div>
+        <div class="column">
+          <div class="rates">
+
+            <article class="rate">
+              <div class="rate-name">
+                <h3>Scoping week</h3>
+                <p class="rate-tag">Fixed fee</p>
+              </div>
+              <div class="rate-what">
+                <p>Five days, two engineers, one written recommendation and a draft evaluation plan. Ends in a go or a no-go, and the document is yours either way. No obligation to continue with us, and no discount if you do.</p>
+              </div>
+              <div class="rate-cost">
+                <p class="rate-num">&pound;9,500</p>
+                <p class="rate-unit">once, invoiced on the Friday</p>
+              </div>
+            </article>
+
+            <article class="rate">
+              <div class="rate-name">
+                <h3>Build pod</h3>
+                <p class="rate-tag">Monthly, three months minimum</p>
+              </div>
+              <div class="rate-what">
+                <p>One machine-learning engineer, one platform engineer, and a product lead two days a week. Your repositories, your reviewers, your code from the first commit. Thirty days' notice to stop, either side, with no exit fee.</p>
+              </div>
+              <div class="rate-cost">
+                <p class="rate-num">&pound;31,000</p>
+                <p class="rate-unit">a month, invoiced monthly</p>
+              </div>
+            </article>
+
+            <article class="rate">
+              <div class="rate-name">
+                <h3>On-call after handover</h3>
+                <p class="rate-tag">Flat retainer</p>
+              </div>
+              <div class="rate-what">
+                <p>We watch the evaluation harness, keep dependencies current, and answer a page within the hour between 08:00 and 18:00 UK time. Four changes a quarter are included. Most clients stop this after two quarters, and we say when.</p>
+              </div>
+              <div class="rate-cost">
+                <p class="rate-num">&pound;6,200</p>
+                <p class="rate-unit">a month, rolling</p>
+              </div>
+            </article>
+
+          </div>
+          <p class="rates-note">What is not on this list: a licence fee on work you paid us to build, a per-seat charge, and a share of the savings. We have been asked for all three and declined all three, because each one gives us a reason to build the wrong thing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- questions -------------------------------------------------------- -->
+  <section class="band" id="questions">
+    <div class="shell">
+      <div class="spine">
+        <div class="rail">
+          <h2>Questions we get before signing</h2>
+          <p class="rail-note">The six that come up in nearly every second call, answered the way we answer them on the call.</p>
+        </div>
+        <div class="column">
+          <div class="qa-grid">
+
+            <div class="qa">
+              <h3>Do you train your own models?</h3>
+              <p>Sometimes. More often we fine-tune a small open-weight model or call a hosted one, and spend the budget on retrieval, evaluation and the failure path instead. Whichever we propose, the reasoning and the cost of the alternative are in the scoping document.</p>
+            </div>
+
+            <div class="qa">
+              <h3>Who owns the code?</h3>
+              <p>You do, from the first commit, in your own repositories. There is no Kestrel licence anywhere in the stack unless you buy Ledger or Sift, and both of those are separable from the rest of the work.</p>
+            </div>
+
+            <div class="qa">
+              <h3>What if it is not good enough?</h3>
+              <p>The pass mark is agreed in week two, so this becomes a question with an answer rather than an argument. If the harness says no at the end of the build, we say no. That has happened twice, and both times we wrote up why and stopped billing.</p>
+            </div>
+
+            <div class="qa">
+              <h3>Can we hire your engineers afterwards?</h3>
+              <p>Yes, and three people have gone that way. The fee is one month of the pod rate if it happens inside six months of handover. We have never objected, because an engineer who wants to own the thing they built is usually right.</p>
+            </div>
+
+            <div class="qa">
+              <h3>What about personal data?</h3>
+              <p>Under a data processing agreement, with a named list of sub-processors and the region you specify. We will not send your records to a hosted model that trains on them, and the providers we propose are named in the scoping document before you sign.</p>
+            </div>
+
+            <div class="qa">
+              <h3>How soon can you start?</h3>
+              <p>A scoping week usually opens up inside three weeks. A build pod needs about six weeks' notice because we do not keep people on the bench. If we cannot staff it properly we will say so rather than hold the slot.</p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- final call ------------------------------------------------------- -->
+  <section class="call" id="call">
+    <div class="shell">
+      <div class="call-grid">
+        <div class="call-main">
+          <h2>The next hour is with the two engineers who would do the work.</h2>
+          <p class="call-main-copy">Not a salesperson, and not a deck. Bring the data you are allowed to discuss and the decision you want to automate. If we think the project is wrong, we will say so on that call, which is cheaper for both of us than finding out in week nine.</p>
+          <div class="actions">
+            <a class="btn" href="mailto:hello@kestrel.build?subject=Scoping%20call">Book a scoping call</a>
+            <a class="btn-text" href="#engagement">Read the engagement models again</a>
+          </div>
+        </div>
+        <div class="contact">
+          <div class="contact-row">
+            <p class="contact-label">Email</p>
+            <a href="mailto:hello@kestrel.build">hello@kestrel.build</a>
+          </div>
+          <div class="contact-row">
+            <p class="contact-label">Telephone</p>
+            <p class="contact-value">+44 113 496 0180</p>
+          </div>
+          <div class="contact-row">
+            <p class="contact-label">Hours we answer a page</p>
+            <p class="contact-value">08:00 to 18:00, UK time</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="shell">
+    <div class="foot-grid">
+      <div class="foot-block">
+        <p class="foot-name">Kestrel Applied Ltd</p>
+        <p class="foot-addr">Marshall&rsquo;s Mill, Marshall Street, Leeds LS11 9YJ</p>
+        <p class="foot-addr">Keizersgracht 241, 1016 EA Amsterdam</p>
+      </div>
+      <div class="foot-block">
+        <p class="foot-head">We publish what clients let us publish</p>
+        <ul class="foot-links">
+          <li><a href="#work">Engagement notes, nine so far</a></li>
+          <li><a href="#how">How we build an evaluation set</a></li>
+          <li><a href="#questions">Work we turn down, and why</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="foot-legal">Registered in England and Wales, company 11948302. VAT GB 341 2290 55. Ledger and Sift are products of Kestrel Applied Ltd.</p>
+  </div>
+</footer>
+
+</body>
+</html>

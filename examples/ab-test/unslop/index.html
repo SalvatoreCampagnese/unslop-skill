@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tempo — a timer for freelancers who bill by the hour</title>
+<meta name="description" content="Tempo times your work, keeps a rounding rule for every client, asks about the blocks it could not place, and hands the week to your invoicing app as one line per rate. 9 euro a month, one seat.">
+<style>
+/* ---------------------------------------------------------------- tokens
+   Derived from the subject's material world: a punch clock and a metronome.
+   Ground is housing enamel (grey-green, desaturated). Panels are the printed
+   dial face. Ink is a stamped time. Rule lines come from a timesheet grid.
+   The one chromatic colour is the index mark on an instrument: it marks time
+   at risk (running, unassigned, not yet billed) and appears nowhere else. */
+:root {
+  --ground:        hsl(172 9% 90%);
+  --ground-deep:   hsl(172 10% 85%);
+  --panel:         hsl(174 20% 97%);
+  --ink:           hsl(197 24% 14%);
+  --ink-mid:       hsl(197 18% 32%);
+  --ink-light:     hsl(195 14% 62%);
+  --mute:          hsl(197 14% 32%);
+  --rule:          hsl(193 11% 67%);
+  --rule-soft:     hsl(193 13% 79%);
+  --signal:        hsl(5 72% 43%);
+  --signal-wash:   hsl(5 55% 92%);
+  --band:          hsl(197 26% 15%);
+  --on-band:       hsl(174 14% 92%);
+  --on-band-soft:  hsl(186 12% 70%);
+
+  --face-display: "Avenir Next Condensed", "Roboto Condensed", "Liberation Sans Narrow", "Arial Narrow", sans-serif;
+  --face-text: Charter, "Bitstream Charter", Georgia, "Noto Serif", serif;
+  --face-figures: Iosevka, "SF Mono", "Cascadia Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
+
+  /* 4 · 8 · 16 · 24 · 32 · 48 · 64 · 96 */
+  --s1: 4px;  --s2: 8px;  --s3: 16px; --s4: 24px;
+  --s5: 32px; --s6: 48px; --s7: 64px; --s8: 96px;
+
+  --sheet: 1120px;
+  --read: 64ch;
+  --narrow: 46ch;
+}
+
+/* ------------------------------------------------------------------ base */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 1.0625rem/1.62 var(--face-text);
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+h1, h2, h3, .display {
+  font-family: var(--face-display);
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0;
+}
+h1 { font-size: clamp(2.5rem, 6.2vw, 4.5rem); line-height: 0.98; }
+h2 { font-size: clamp(1.75rem, 3.4vw, 2.5rem); line-height: 1.04; }
+h3 { font-size: 1.1875rem; line-height: 1.2; }
+p { margin: 0 0 var(--s3); }
+p:last-child { margin-bottom: 0; }
+.fig { font-family: var(--face-figures); font-variant-numeric: tabular-nums; }
+.lede { font-size: 1.1875rem; line-height: 1.55; max-width: var(--read); }
+.note { font-size: 0.9375rem; line-height: 1.5; color: var(--mute); }
+em { font-style: italic; }
+strong { font-weight: 700; }
+
+/* ---------------------------------------------------------------- layout
+   One vertical rule runs down the page like the left edge of a timesheet.
+   Everything hangs off it. Measure changes with the job of the section. */
+.sheet { width: 100%; max-width: var(--sheet); margin: 0 auto; padding: 0 var(--s4); }
+.hang {
+  position: relative;
+  border-left: 1px solid var(--rule);
+  padding-left: clamp(16px, 3.2vw, 40px);
+}
+.hang > h2 { position: relative; }
+.hang > h2::before {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: calc(-1 * clamp(16px, 3.2vw, 40px) - 1px);
+  width: clamp(12px, 2.2vw, 26px);
+  height: 2px;
+  background: var(--ink);
+}
+section { padding: var(--s7) 0; }
+.read { max-width: var(--read); }
+.narrow { max-width: var(--narrow); }
+
+/* ------------------------------------------------- links, actions, states */
+a { color: var(--ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--signal); }
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+.btn {
+  display: inline-block;
+  font-family: var(--face-display);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: 0.01em;
+  padding: 11px var(--s4) 12px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--panel);
+  text-decoration: none;
+  transition: background-color 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out;
+}
+.btn:hover { background: var(--panel); color: var(--ink); }
+.btn:active { background: var(--ground-deep); color: var(--ink); }
+.btn[aria-disabled="true"] { border-color: var(--rule); background: var(--ground-deep); color: var(--mute); pointer-events: none; }
+.btn--quiet { background: transparent; color: var(--ink); border-color: var(--rule); }
+.btn--quiet:hover { background: var(--panel); border-color: var(--ink); color: var(--ink); }
+.btn--on-band { background: var(--on-band); color: var(--band); border-color: var(--on-band); }
+.btn--on-band:hover { background: transparent; color: var(--on-band); }
+kbd {
+  font-family: var(--face-figures);
+  font-size: 0.875rem;
+  padding: 2px 7px 3px;
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: var(--panel);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- topbar */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--ground);
+  border-bottom: 1px solid var(--rule);
+}
+.topbar__in {
+  display: flex; align-items: baseline; gap: var(--s5);
+  padding: 14px var(--s4) 13px;
+  width: 100%; max-width: var(--sheet); margin: 0 auto;
+}
+.wordmark {
+  font-family: var(--face-display);
+  font-weight: 700;
+  font-size: 1.375rem;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 9px;
+}
+/* the one signature detail, in miniature: a tick scale */
+.wordmark::after {
+  content: "";
+  width: 39px; height: 12px;
+  position: relative; top: -1px;
+  background-image:
+    repeating-linear-gradient(to right, var(--rule) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(to right, var(--ink) 0 1px, transparent 1px 20px);
+  background-size: 100% 5px, 100% 11px;
+  background-repeat: no-repeat;
+  background-position: left bottom, left bottom;
+}
+.topnav { margin-left: auto; display: flex; align-items: baseline; gap: var(--s4); }
+.topnav a { font-family: var(--face-display); font-size: 1rem; text-decoration: none; }
+.topnav a:hover { text-decoration: underline; }
+.topnav .btn { padding: 7px 14px 8px; font-size: 0.9375rem; }
+
+/* ------------------------------------------------------------------ hero */
+.hero { padding-top: var(--s6); padding-bottom: var(--s6); }
+.hero h1 { max-width: 26ch; text-wrap: balance; }
+.hero .lede { margin-top: var(--s4); }
+.hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s4); margin-top: var(--s5); }
+.hero__actions .note { max-width: 32ch; }
+
+/* ------------------------------------------- the day band (the signature)
+   A real Tuesday. Window: 07:00 to 20:00. Tone, not hue, separates clients;
+   the index colour marks the running block and the one Tempo could not place. */
+.day { margin-top: var(--s7); }
+.day__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2) var(--s4); margin-bottom: var(--s3); }
+.day__head h2 { font-size: 1.1875rem; }
+.day__total { font-family: var(--face-figures); font-size: 0.9375rem; color: var(--mute); }
+.running { font-family: var(--face-figures); font-size: 0.9375rem; color: var(--signal); display: flex; align-items: center; gap: 7px; }
+.running__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--signal); }
+.scale {
+  position: relative;
+  height: 13px;
+  background-image:
+    repeating-linear-gradient(to right, var(--rule) 0 1px, transparent 1px calc(100% / 52)),
+    repeating-linear-gradient(to right, var(--ink) 0 1px, transparent 1px calc(100% / 13));
+  background-size: 100% 6px, 100% 12px;
+  background-repeat: no-repeat;
+  background-position: left bottom, left bottom;
+}
+.scale__marks { position: relative; height: 1.4em; margin-bottom: 3px; }
+.scale__marks span {
+  position: absolute; top: 0;
+  transform: translateX(-50%);
+  font-family: var(--face-figures);
+  font-size: 0.8125rem;
+  color: var(--mute);
+}
+.strip {
+  position: relative;
+  height: 62px;
+  margin-top: 6px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.blk {
+  position: absolute; top: 0; bottom: 0;
+  padding: 7px 8px;
+  overflow: hidden;
+  font-family: var(--face-display);
+  font-size: 0.875rem;
+  line-height: 1.15;
+  border-right: 1px solid var(--panel);
+}
+.blk b { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blk span { display: block; font-weight: 400; font-size: 0.8125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blk--a { background: var(--ink); color: var(--panel); }
+.blk--b { background: var(--ink-mid); color: var(--panel); }
+.blk--c { background: var(--ink-light); color: var(--ink); }
+.blk--run { background: var(--signal); color: var(--panel); border-right: none; }
+.blk--gap {
+  background-color: var(--signal-wash);
+  background-image: repeating-linear-gradient(45deg, var(--signal) 0 1px, transparent 1px 6px);
+  color: var(--signal);
+  border-left: 1px solid var(--signal);
+  border-right: 1px solid var(--signal);
+}
+.legend { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; gap: 10px var(--s5); grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.legend li { display: flex; gap: 10px; align-items: baseline; font-size: 0.9375rem; line-height: 1.4; }
+.legend .swatch { flex: 0 0 auto; width: 14px; height: 14px; border-radius: 1px; border: 1px solid var(--rule); position: relative; top: 2px; }
+.legend time { font-family: var(--face-figures); font-size: 0.875rem; color: var(--mute); white-space: nowrap; }
+.caught {
+  margin-top: var(--s4);
+  padding-left: var(--s3);
+  border-left: 1px solid var(--signal);
+  max-width: 52ch;
+  font-size: 0.9375rem;
+}
+.caught strong { font-family: var(--face-display); }
+
+/* ------------------------------------------------------------- mechanism */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: var(--s5);
+  margin-top: var(--s5);
+}
+.panel h3 { margin-bottom: var(--s3); }
+.keys { display: flex; align-items: center; gap: 6px; margin-bottom: var(--s3); }
+.keys .plus { color: var(--mute); font-size: 0.875rem; }
+.path { font-family: var(--face-figures); font-size: 0.9375rem; background: var(--ground); padding: 2px 6px; border-radius: 2px; }
+
+.tablewrap { margin-top: var(--s4); overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; min-width: 33rem; }
+caption { text-align: left; font-family: var(--face-display); font-size: 1rem; padding-bottom: var(--s2); color: var(--mute); }
+th, td { padding: 10px 12px 9px; border-bottom: 1px solid var(--rule-soft); text-align: left; vertical-align: baseline; }
+thead th { font-family: var(--face-display); font-weight: 700; font-size: 0.9375rem; border-bottom: 1px solid var(--ink); }
+td.num, th.num { text-align: right; font-family: var(--face-figures); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody th { font-weight: 700; font-family: var(--face-display); font-size: 1rem; }
+tfoot td, tfoot th { border-bottom: none; border-top: 1px solid var(--ink); font-weight: 700; }
+tfoot th { font-family: var(--face-display); }
+.gain { color: var(--signal); font-family: var(--face-figures); }
+
+.smalls { margin-top: var(--s6); display: grid; gap: var(--s5) var(--s6); grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 56rem; }
+.smalls div { border-top: 1px solid var(--rule); padding-top: var(--s3); }
+.smalls dt { font-family: var(--face-display); font-weight: 700; font-size: 1.125rem; margin-bottom: 6px; }
+.smalls dd { margin: 0; font-size: 1rem; line-height: 1.55; }
+
+/* ------------------------------------------------------- the dark band */
+.tuesday {
+  background: var(--band);
+  color: var(--on-band);
+  padding: var(--s7) 0 var(--s8);
+  margin: var(--s6) 0;
+}
+.tuesday .hang { border-left-color: hsl(197 16% 34%); }
+.tuesday .hang > h2::before { background: var(--on-band); }
+.tuesday .lede { color: var(--on-band); }
+.tuesday a { color: var(--on-band); }
+.tuesday a:focus-visible { outline-color: var(--on-band); }
+.moments {
+  margin-top: var(--s6);
+  padding-top: var(--s4);
+  display: grid;
+  gap: var(--s5) var(--s5);
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  background-image:
+    repeating-linear-gradient(to right, hsl(197 16% 34%) 0 1px, transparent 1px 14px),
+    linear-gradient(to right, var(--on-band-soft) 0 100%);
+  background-size: 100% 7px, 100% 1px;
+  background-repeat: no-repeat;
+  background-position: left top, left top;
+}
+.moments > div > time {
+  display: block;
+  font-family: var(--face-figures);
+  font-size: 1.0625rem;
+  color: var(--on-band-soft);
+  margin-bottom: 6px;
+}
+.moments h3 { margin-bottom: 8px; }
+.moments p { font-size: 1rem; line-height: 1.55; color: var(--on-band); }
+
+/* ------------------------------------------------------------------ cost */
+.plans {
+  margin-top: var(--s6);
+  display: grid;
+  gap: var(--s5);
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
+}
+.plan--paid { background: var(--panel); border: 1px solid var(--ink); border-radius: 2px; padding: var(--s5); }
+.plan--free { border: 1px solid var(--rule); border-radius: 2px; padding: var(--s5); }
+.price { font-family: var(--face-display); font-weight: 700; font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1; margin: var(--s2) 0 var(--s1); }
+.price small { font-family: var(--face-text); font-weight: 400; font-size: 1rem; }
+.plan ul { list-style: none; margin: var(--s4) 0; padding: 0; font-size: 1rem; }
+.plan li { padding: 7px 0 7px var(--s3); border-top: 1px solid var(--rule-soft); position: relative; line-height: 1.5; }
+.plan li::before { content: ""; position: absolute; left: 0; top: 1.05em; width: 7px; height: 1px; background: var(--ink); }
+.plan--free li::before { background: var(--rule); }
+.plan .btn { margin-top: var(--s2); }
+.noteam { margin-top: var(--s5); padding-left: var(--s3); border-left: 1px solid var(--rule); max-width: 56ch; }
+
+/* ----------------------------------------------------------------- proof */
+blockquote { margin: 0; }
+.quote--lead { margin-top: var(--s5); max-width: 36ch; font-size: clamp(1.375rem, 2.6vw, 1.75rem); line-height: 1.32; }
+.quote--lead p { margin-bottom: var(--s3); }
+.quotes { margin-top: var(--s6); display: grid; gap: var(--s5) var(--s6); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.quotes blockquote { border-top: 1px solid var(--rule); padding-top: var(--s3); }
+.quotes p { font-size: 1.0625rem; }
+figcaption, .who { font-family: var(--face-display); font-size: 0.9375rem; line-height: 1.35; color: var(--mute); }
+.who b { display: block; font-size: 1.0625rem; color: var(--ink); }
+
+/* ------------------------------------------------------------- questions */
+.qa { margin-top: var(--s5); max-width: 68ch; border-top: 1px solid var(--rule); }
+details { border-bottom: 1px solid var(--rule-soft); }
+summary {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--s3) var(--s5) var(--s3) 0;
+  font-family: var(--face-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  position: relative;
+  transition: color 160ms ease-out;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after {
+  content: "";
+  position: absolute; right: 6px; top: 1.45em;
+  width: 11px; height: 1px; background: var(--ink);
+}
+summary::before {
+  content: "";
+  position: absolute; right: 11px; top: calc(1.45em - 5px);
+  width: 1px; height: 11px; background: var(--ink);
+  transition: opacity 160ms ease-out;
+}
+details[open] > summary::before { opacity: 0; }
+summary:hover { color: var(--signal); }
+details > div { padding: 0 0 var(--s4); max-width: var(--read); }
+
+/* --------------------------------------------------------------- closing */
+.closing { padding-bottom: var(--s8); }
+.closing h2 { max-width: 24ch; }
+.closing .row { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s5); }
+
+/* ---------------------------------------------------------------- footer */
+footer { border-top: 1px solid var(--rule); background: var(--ground-deep); padding: var(--s6) 0 var(--s5); font-size: 0.9375rem; }
+.foot { display: grid; gap: var(--s5) var(--s6); grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); }
+.foot h3 { font-size: 1rem; margin-bottom: 10px; }
+.foot ul { list-style: none; margin: 0; padding: 0; }
+.foot li { margin-bottom: 7px; }
+.foot p { max-width: 42ch; line-height: 1.55; }
+.colophon { margin-top: var(--s6); padding-top: var(--s3); border-top: 1px solid var(--rule); font-family: var(--face-figures); font-size: 0.8125rem; color: var(--mute); }
+
+/* ------------------------------------------------------------ responsive */
+@media (max-width: 860px) {
+  .plans { grid-template-columns: minmax(0, 1fr); }
+  .foot { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  section { padding: var(--s6) 0; }
+  .smalls { grid-template-columns: minmax(0, 1fr); }
+  .topnav a:not(.btn) { display: none; }
+  .blk b, .blk span { display: none; }
+  .strip { height: 44px; }
+  .day { margin-top: var(--s6); }
+}
+@media (max-width: 520px) {
+  .foot { grid-template-columns: minmax(0, 1fr); }
+  .scale__marks span:nth-child(even) { display: none; }
+}
+
+/* --------------------------------------------------------- reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 1ms !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="wordmark" href="#top">Tempo</a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#does">What it does</a>
+      <a href="#tuesday">A Tuesday</a>
+      <a href="#cost">What it costs</a>
+      <a href="#questions">Questions</a>
+      <a class="btn" href="#download">Download Tempo</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ========================================================== hero -->
+  <section class="hero">
+    <div class="sheet">
+      <div class="hang">
+        <h1>You tracked 6&nbsp;h&nbsp;38 on Tuesday.<br>The invoice says 6.80.</h1>
+        <p class="lede">Tempo is a timer for freelancers who bill by the hour. It keeps a
+          rounding rule for every client, asks about the blocks it could not place while you
+          still remember them, and hands the week to your invoicing app as one line per rate.
+          9 euro a month. One seat, on purpose.</p>
+        <div class="hero__actions">
+          <a class="btn" href="#download">Download Tempo</a>
+          <a class="btn btn--quiet" href="#rounding">See how the rounding works</a>
+        </div>
+        <p class="note" style="margin-top:var(--s4);max-width:44ch">macOS 13 Ventura or later,
+          Windows 11, Linux as an AppImage. 14 MB. Free while you have two clients or fewer.</p>
+      </div>
+
+      <!-- the signature detail: one real day, measured -->
+      <figure class="day">
+        <div class="day__head">
+          <h2>Tuesday, 28 October</h2>
+          <p class="day__total">five sessions, 6 h 38 tracked, one block unplaced</p>
+          <p class="running"><span class="running__dot"></span>Kerneval, running 00:33</p>
+        </div>
+        <div class="scale__marks" aria-hidden="true">
+          <span style="left:15.4%">09:00</span>
+          <span style="left:38.5%">12:00</span>
+          <span style="left:61.5%">15:00</span>
+          <span style="left:84.6%">18:00</span>
+        </div>
+        <div class="scale" aria-hidden="true"></div>
+        <div class="strip" role="img" aria-label="Tuesday from 07:00 to 20:00: five tracked sessions, one unassigned block of 35 minutes at 11:20, and a session for Kerneval still running at 18:18.">
+          <div class="blk blk--a" style="left:14.1%;width:5.8%"><b>Studio Nord</b><span>glossary</span></div>
+          <div class="blk blk--b" style="left:19.9%;width:13.5%"><b>Kerneval</b><span>spec, English to Dutch</span></div>
+          <div class="blk blk--gap" style="left:33.3%;width:4.5%"></div>
+          <div class="blk blk--c" style="left:47.4%;width:19.2%"><b>Hof &amp; Zoon</b><span>site-visit notes</span></div>
+          <div class="blk blk--a" style="left:69.9%;width:8.3%"><b>Studio Nord</b><span>glossary</span></div>
+          <div class="blk blk--run" style="left:82.7%;width:4.2%"></div>
+        </div>
+        <ul class="legend">
+          <li><span class="swatch" style="background:var(--ink)"></span><span><time>08:50–09:35</time> Studio Nord, glossary fixes</span></li>
+          <li><span class="swatch" style="background:var(--ink-mid)"></span><span><time>09:35–11:20</time> Kerneval, spec translation</span></li>
+          <li><span class="swatch" style="background-color:var(--signal-wash);background-image:repeating-linear-gradient(45deg,var(--signal) 0 1px,transparent 1px 4px);border-color:var(--signal)"></span><span><time>11:20–11:55</time> nothing assigned</span></li>
+          <li><span class="swatch" style="background:var(--ink-light)"></span><span><time>13:10–15:40</time> Hof &amp; Zoon, site-visit notes</span></li>
+          <li><span class="swatch" style="background:var(--ink)"></span><span><time>16:05–17:10</time> Studio Nord, glossary fixes</span></li>
+          <li><span class="swatch" style="background:var(--signal)"></span><span><time>17:45 onward</time> Kerneval, running now</span></li>
+        </ul>
+        <figcaption class="caught">
+          <strong>About those 35 minutes.</strong> Teams was in front for most of it and the
+          calendar had Studio Nord in that slot, so at the end of the day Tempo offers the block
+          with that guess attached. Keep it, trim it, or move it to another client. One key each.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================================================ what it does -->
+  <section id="does">
+    <div class="sheet">
+      <div class="hang">
+        <h2>What it does while you work</h2>
+        <p class="lede">Three things, in the order they matter: it starts without being
+          thought about, it does the client's arithmetic instead of yours, and it does not try
+          to become your invoicing software.</p>
+
+        <div class="panel read">
+          <h3>Starting the clock costs two keys</h3>
+          <div class="keys"><kbd>Option</kbd><span class="plus">+</span><kbd>Space</kbd></div>
+          <p>Tempo starts timing the document in front of you and tags it with the client whose
+            folder it sits in: anything under <span class="path">~/Work/Studio Nord/</span>
+            is Studio Nord, every time, without a dropdown. The window title goes into the note,
+            so six weeks later the line reads <em>glossary_fixes_v4.docx</em> and not
+            <em>misc</em>. The same two keys stop it.</p>
+          <p class="note">If the keyboard and trackpad go quiet for 25 minutes, Tempo keeps
+            timing but flags the block as idle and asks when you come back.</p>
+        </div>
+
+        <h3 id="rounding" style="margin-top:var(--s7)">Every client rounds differently. Tempo remembers which.</h3>
+        <p class="read" style="margin-top:var(--s3)">This is the part people are losing money
+          on. A fifteen-minute increment is not a rounding error when it happens eleven times a
+          week. Set the rule once per client and Tempo shows both figures, so you always know
+          what you are giving away and what you are allowed to keep.</p>
+
+        <div class="tablewrap">
+        <table>
+          <caption>Tuesday, 28 October — tracked time against billable time</caption>
+          <thead>
+            <tr>
+              <th scope="col">Client</th>
+              <th scope="col">Rule on file</th>
+              <th scope="col" class="num">Tracked</th>
+              <th scope="col" class="num">Billable</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Studio Nord</th>
+              <td>each session up to the next quarter hour, one hour minimum a day</td>
+              <td class="num">1 h 50</td>
+              <td class="num">2.00</td>
+            </tr>
+            <tr>
+              <th scope="row">Kerneval</th>
+              <td>to the minute, no minimum</td>
+              <td class="num">2 h 18</td>
+              <td class="num">2.30</td>
+            </tr>
+            <tr>
+              <th scope="row">Hof &amp; Zoon</th>
+              <td>half hours, two hour minimum a visit</td>
+              <td class="num">2 h 30</td>
+              <td class="num">2.50</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">Tuesday</th>
+              <td>at your three rates, the stopwatch alone would have quietly cost you <span class="gain">11 euro</span></td>
+              <td class="num">6 h 38</td>
+              <td class="num">6.80</td>
+            </tr>
+          </tfoot>
+        </table>
+        </div>
+
+        <dl class="smalls">
+          <div>
+            <dt>Fixed fee, watched from inside</dt>
+            <dd>Mark a project flat-fee and the timer shows what your hour is currently worth:
+              1,400 euro agreed, 18 h 30 spent, 75.68 an hour and falling. You find
+              out in week two, not at delivery.</dd>
+          </div>
+          <div>
+            <dt>One file, on your disk</dt>
+            <dd>Everything is in <span class="path">tempo.db</span> in your application support
+              folder. It is SQLite. Open it, back it up, take it with you. Sync between your own
+              machines is optional and off until you switch it on.</dd>
+          </div>
+          <div>
+            <dt>A week with an edge to it</dt>
+            <dd>Give the week a billable target and the menu bar fills as you earn it. By
+              Thursday afternoon you know whether Friday is work or rest, which is the only
+              forecast a freelancer actually uses.</dd>
+          </div>
+          <div>
+            <dt>It hands over and stops</dt>
+            <dd>One CSV line per client and rate, or a push into Moneybird, FreeAgent or
+              Lexoffice. Your invoicing tool already knows your VAT rules. Tempo has no opinion
+              about them.</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================= a Tuesday -->
+  <section class="tuesday" id="tuesday">
+    <div class="sheet">
+      <div class="hang">
+        <h2>The same Tuesday, from the inside</h2>
+        <p class="lede">Four moments. Nothing in between them is work you have to do.</p>
+        <div class="moments">
+          <div>
+            <time>08:50</time>
+            <h3>You open a file</h3>
+            <p>Two keys. The clock starts against Studio Nord because that is whose folder the
+              file lives in. You do not look at Tempo again until the afternoon.</p>
+          </div>
+          <div>
+            <time>11:20</time>
+            <h3>A call you will forget</h3>
+            <p>Thirty-five minutes on a call, nothing typed, no timer. Tempo notes the gap and
+              what was in front of you, and leaves it alone until the day is over.</p>
+          </div>
+          <div>
+            <time>18:18</time>
+            <h3>The day closes itself</h3>
+            <p>You stop the clock. Tempo asks one question — the 11:20 block — and then prints
+              the day: 6 h 38 tracked, 6.80 billable, three clients.</p>
+          </div>
+          <div>
+            <time>Friday, 17:40</time>
+            <h3>Three lines, not an evening</h3>
+            <p>The week exports as one line per client and rate, already rounded their way. The
+              reconstruction you used to do on Sunday no longer has anything to reconstruct.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================== what it costs -->
+  <section id="cost">
+    <div class="sheet">
+      <div class="hang">
+        <h2>What it costs</h2>
+        <p class="lede">One paid plan, because there is one kind of person using this. The price
+          is below what a single recovered call is worth, which is the whole argument.</p>
+
+        <div class="plans">
+          <div class="plan plan--paid">
+            <h3>Tempo</h3>
+            <p class="price">9 euro <small>a month, or 84 a year</small></p>
+            <p class="note">Billed to a card or by yearly invoice, which you can expense.</p>
+            <ul>
+              <li>Clients, projects and rates without a limit</li>
+              <li>A rounding rule and a minimum for every client</li>
+              <li>The end-of-day question about unplaced blocks</li>
+              <li>Fixed-fee projects with a live hourly figure</li>
+              <li>CSV, plus Moneybird, FreeAgent and Lexoffice</li>
+              <li>Sync across your own Mac, PC and phone</li>
+            </ul>
+            <a class="btn" href="#download">Download Tempo</a>
+          </div>
+          <div class="plan plan--free">
+            <h3>Free, up to two clients</h3>
+            <p class="price">0 euro <small>no card, no countdown</small></p>
+            <p class="note">Most people stay here for a few months. That is fine and it is not a trial.</p>
+            <ul>
+              <li>Two active clients at a time</li>
+              <li>Timer, manual entries, one rounding rule</li>
+              <li>CSV export of everything you have tracked</li>
+              <li>No sync, no end-of-day question</li>
+            </ul>
+            <a class="btn btn--quiet" href="#download">Download the free build</a>
+          </div>
+        </div>
+
+        <p class="noteam">There is no team plan and there will not be one. Tempo assumes one
+          person, one invoice and one set of rounding rules. The moment you need to approve
+          somebody else's hours you need different software, and we would rather say so here
+          than in a sales call.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== proof -->
+  <section id="proof">
+    <div class="sheet">
+      <div class="hang">
+        <h2>Three freelancers, two months in</h2>
+        <blockquote class="quote--lead">
+          <p>“I went back through two months of Tempo and found eleven phone calls I had never
+            put on an invoice. Twenty minutes each, every one of them billable. About 240 euro
+            I had quietly given away without noticing.”</p>
+          <figcaption class="who"><b>Marit Venhuizen</b> technical translator, Utrecht</figcaption>
+        </blockquote>
+
+        <div class="quotes">
+          <blockquote>
+            <p>“My largest client bills in half hours with a two hour minimum per visit. I used
+              to work that out in my head on the thirtieth of the month, badly, and always in
+              their favour. Tempo does it per session and I stopped negotiating with myself.”</p>
+            <figcaption class="who"><b>Dario Sacchi</b> structural engineer, Bologna</figcaption>
+          </blockquote>
+          <blockquote>
+            <p>“The part I did not expect to like is the question at the end of the day. It asks
+              about the half hour it could not place while I still remember what I was doing. By
+              Friday there is nothing left to reconstruct, so Sunday is free again.”</p>
+            <figcaption class="who"><b>Priya Raman</b> brand illustrator, Bristol</figcaption>
+          </blockquote>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== questions -->
+  <section id="questions">
+    <div class="sheet">
+      <div class="hang">
+        <h2>Questions freelancers actually ask</h2>
+        <div class="qa">
+          <details>
+            <summary>Does it watch my screen?</summary>
+            <div>
+              <p>It reads the name of the front application and its window title every few
+                seconds and writes them to the local file. No screenshots, no keystrokes,
+                nothing leaves the machine unless you switch sync on. You can exclude
+                applications by name, and most people exclude their bank and their messages.</p>
+            </div>
+          </details>
+          <details>
+            <summary>What if I forget to start the timer at all?</summary>
+            <div>
+              <p>That is what the end-of-day question is for. Tempo keeps a quiet record of what
+                was in front of you in each five minute block, so when the day closes it offers
+                the stretches you never assigned, with a guess attached. The 35 minutes in the
+                band at the top of this page is one of those.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Can I send an invoice from Tempo?</summary>
+            <div>
+              <p>No, and it is not on the list. It writes one line per client and rate and
+                pushes the same lines into Moneybird, FreeAgent or Lexoffice. Invoicing means
+                tax rules in thirty countries, reminders, and dunning letters. That is a
+                different product and other people are better at it.</p>
+            </div>
+          </details>
+          <details>
+            <summary>I already use Toggl. What would change?</summary>
+            <div>
+              <p>Import your CSV export and the old entries keep their clients and notes. What
+                you gain is the rounding rule per client, the end-of-day question and a local
+                database. What you lose is the team view, the report builder and the board.
+                If you work alone, that is a good trade. If you do not, it is not.</p>
+            </div>
+          </details>
+          <details>
+            <summary>What does it run on?</summary>
+            <div>
+              <p>macOS 13 Ventura or later, Windows 11, and Linux as an AppImage tested on
+                Ubuntu and Fedora. The iPhone app starts and stops timers and shows the week; it
+                cannot edit entries yet. There is no browser version, because a timer that dies
+                with a closed tab is not a timer.</p>
+            </div>
+          </details>
+          <details>
+            <summary>What happens if I stop paying?</summary>
+            <div>
+              <p>The app keeps running on the free terms: two active clients, manual entries,
+                CSV export. Sync and the end-of-day question switch off. Nothing is locked, no
+                data is held, and the database stays a file you own.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= closing -->
+  <section class="closing" id="download">
+    <div class="sheet">
+      <div class="hang">
+        <h2>Put it on before your next session</h2>
+        <p class="lede narrow">Install it, press the two keys, and keep working. By Friday the
+          week is already in a shape your invoicing app can read. If you have two clients or
+          fewer you will not see a payment screen at all.</p>
+        <div class="row">
+          <a class="btn" href="#download">Download for macOS</a>
+          <a class="btn btn--quiet" href="#download">Download for Windows</a>
+          <a class="btn btn--quiet" href="#download">Download the AppImage</a>
+        </div>
+        <p class="note" style="margin-top:var(--s4)">14 MB. No account needed to start
+          timing; you only make one when you turn sync on.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="sheet">
+    <div class="foot">
+      <div>
+        <h3>Who makes this</h3>
+        <p>Tempo is built in Rotterdam by two freelance translators who got tired of Sunday
+          nights, and one developer who did the SQLite part. Support is an email address and it
+          is answered within a working day.</p>
+        <p style="margin-top:var(--s3)"><a href="mailto:hello@usetempo.app">hello@usetempo.app</a></p>
+      </div>
+      <div>
+        <h3>Downloads</h3>
+        <ul>
+          <li><a href="#download">macOS 13 or later</a></li>
+          <li><a href="#download">Windows 11</a></li>
+          <li><a href="#download">Linux AppImage</a></li>
+          <li><a href="#download">iPhone, read only</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Written down</h3>
+        <ul>
+          <li><a href="#rounding">How rounding rules work</a></li>
+          <li><a href="#does">The database schema</a></li>
+          <li><a href="#does">Keyboard shortcuts</a></li>
+          <li><a href="#questions">What we log, exactly</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="colophon">Version 1.6.2, released 14 October 2026. Prices include Dutch VAT for
+      consumers and exclude it for businesses with a valid number.</p>
+  </div>
+</footer>
+
+</body>
+</html>

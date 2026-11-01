@@ -1,0 +1,50 @@
+{
+  // unslop.style.json — the shape, type, motion and copy decisions already made.
+  // Everything here is optional. What you declare stops being judged by the
+  // default catalog and starts being judged against your own choice.
+
+  // "any" ignores radius. "scale" reports radii that are not on the scale (X2).
+  "radius": { "policy": "scale", "scale": [0, 2, 6, 14], "tolerance": 1 },
+
+  // "none" reports every shadow, "neutral" reports coloured ones, "any" ignores them
+  "shadow": { "policy": "neutral" },
+
+  "glass": { "allow": false },
+  "gradients": { "allow": false },
+
+  // declared faces are decisions: T1 and T2 stop firing on them
+  "fonts": {
+    "display": ["Söhne"],
+    "body": ["Söhne"],
+    "mono": ["Berkeley Mono"],
+    "allowSystemStack": false
+  },
+
+  "motion": {
+    "requireReducedMotion": true,
+    "allowBounce": false,
+    "allowUniformReveal": false
+  },
+
+  "icons": { "allowEmoji": false, "allowSparkles": false },
+
+  "copy": {
+    "allowArrowsInCta": false,
+    "allowGenericCta": false,
+    // words this product owns, and words it refuses, whatever the catalog says
+    "vocabulary": { "allow": [], "ban": [] }
+  },
+
+  // per-rule: "off" removes it, "P0"|"P1"|"P2" re-ranks it
+  "rules": {},
+
+  "thresholds": { "maxScore": 25, "min": "P2" },
+
+  // prose side (/unslop text)
+  "text": {
+    "lang": "auto",
+    "maxScore": 25,
+    "allowWords": [],
+    "banWords": []
+  }
+}
