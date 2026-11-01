@@ -1,6 +1,6 @@
 {
   "name": "unslop",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Remove AI slop from UI and from prose. Configurable source scanners plus a headless-Chrome render audit, and an agent skill.",
   "license": "MIT",
   "type": "module",
